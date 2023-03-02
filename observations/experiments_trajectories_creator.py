@@ -3,7 +3,7 @@ import logging
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Optional
 
 from pddl_plus_parser.exporters import MetricFFParser, TrajectoryExporter, ENHSPParser
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
@@ -43,13 +43,17 @@ class ExperimentTrajectoriesCreator:
                 self.logger.debug(f"Lowering the case for all actions in - {solution_file_path.stem}")
                 solution_parser.parse_plan(solution_file_path)
 
-    def create_domain_trajectories(self) -> NoReturn:
-        """Creates the domain trajectory files."""
+    def create_domain_trajectories(self, problem_path: Optional[str] = None) -> NoReturn:
+        """Creates the domain trajectory files.
+
+        :param problem_path: the path to the problem file to create the trajectories for
+            (in cases many solutions can be associated with a single problem file).
+        """
         domain_file_path = self.working_directory_path / self.domain_file_name
         domain = DomainParser(domain_file_path).parse_domain()
         trajectory_exporter = TrajectoryExporter(domain=domain)
         for solution_file_path in self.working_directory_path.glob("*.solution"):
-            problem_file_path = self.working_directory_path / f"{solution_file_path.stem}.pddl"
+            problem_file_path = problem_path or self.working_directory_path / f"{solution_file_path.stem}.pddl"
             trajectory_file_path = self.working_directory_path / f"{solution_file_path.stem}.trajectory"
             if trajectory_file_path.exists():
                 continue
