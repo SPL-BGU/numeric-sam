@@ -133,9 +133,7 @@ class ExtendedSAM(SAMLearner):
         lifted_add_effects, lifted_delete_effects = self._handle_action_effects(
             grounded_action, previous_state, next_state)
 
-        observed_action.add_effects.update(lifted_add_effects)
-        observed_action.delete_effects.update(lifted_delete_effects)
-
+        observed_action.discrete_effects.update(set(lifted_add_effects).union(lifted_delete_effects))
         self.observed_actions.append(observed_action.name)
         self.logger.debug(f"Finished adding the action {grounded_action.name}.")
 
@@ -150,7 +148,7 @@ class ExtendedSAM(SAMLearner):
         """
         action_name = grounded_action.name
         observed_action = self.partial_domain.actions[action_name]
-        super()._update_action_preconditions(grounded_action, previous_state)
+        super()._update_action_preconditions(grounded_action)
         lifted_add_effects, lifted_delete_effects = self._handle_action_effects(
             grounded_action, previous_state, next_state)
 
@@ -168,7 +166,9 @@ class ExtendedSAM(SAMLearner):
         next_state = component.next_state
         action_name = grounded_action.name
 
-        super()._create_fully_observable_triplet_predicates(grounded_action, previous_state, next_state)
+        self.triplet_snapshot.create_snapshot(
+            previous_state=previous_state, next_state=next_state, current_action=grounded_action,
+            observation_objects=self.current_trajectory_objects)
         if action_name not in self.observed_actions:
             self.add_new_action(grounded_action, previous_state, next_state)
 

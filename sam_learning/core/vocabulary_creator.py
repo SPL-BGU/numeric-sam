@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Set, Union, Optional
 
 from pddl_plus_parser.models import Predicate, PDDLObject, GroundedPredicate, PDDLType, Domain
 
-from sam_learning.core import LearnerDomain
+from sam_learning.core.learner_domain import LearnerDomain
 
 
 def choose_objects_subset(array: List[str], subset_size: int) -> List[Tuple[str]]:
@@ -50,13 +50,13 @@ class VocabularyCreator:
         :return: list containing all the predicates with the different combinations of parameters.
         """
         vocabulary = defaultdict(set)
-        possible_objects = list(observed_objects.keys()) + list(domain.constants.keys())
+        possible_objects_str = list(observed_objects.keys()) + list(domain.constants.keys())
         objects_and_consts = list(observed_objects.values()) + list(domain.constants.values())
         for predicate in domain.predicates.values():
             predicate_name = predicate.name
-            signature_permutations = choose_objects_subset(possible_objects, len(predicate.signature))
+            signature_permutations = choose_objects_subset(possible_objects_str, len(predicate.signature))
             for signature_permutation in signature_permutations:
-                grounded_signature = {object_name: objects_and_consts[possible_objects.index(object_name)].type
+                grounded_signature = {object_name: objects_and_consts[possible_objects_str.index(object_name)].type
                                       for object_name in signature_permutation}
                 if not self._validate_type_matching(grounded_signature, predicate):
                     continue
@@ -76,6 +76,7 @@ class VocabularyCreator:
 
         :param domain: the domain containing the predicates and the action signatures.
         :param possible_parameters: the parameters to use to create the vocabulary from.
+        :param must_be_parameter: if not None, the vocabulary will only contain predicates that have this parameter.
         :return: list containing all the predicates with the different combinations of parameters.
         """
         self.logger.debug(f"Creating predicates vocabulary from {possible_parameters}")
@@ -92,11 +93,13 @@ class VocabularyCreator:
                 if not self._validate_type_matching(bounded_lifted_signature, predicate):
                     continue
 
-                if must_be_parameter is not None and must_be_parameter not in bounded_lifted_signature:
+                if must_be_parameter and must_be_parameter not in bounded_lifted_signature:
                     continue
 
-                grounded_predicate = Predicate(name=predicate_name, signature=bounded_lifted_signature)
-                vocabulary.add(grounded_predicate)
+                lifted_predicate = Predicate(name=predicate_name, signature=bounded_lifted_signature)
+                negative_lifted_predicate = lifted_predicate.copy()
+                negative_lifted_predicate.is_positive = False
+                vocabulary.update({lifted_predicate, negative_lifted_predicate})
 
         self.logger.debug(f"Created vocabulary of size {len(vocabulary)}")
         return vocabulary

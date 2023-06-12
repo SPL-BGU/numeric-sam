@@ -73,7 +73,7 @@ class PredicatesMatcher:
             Used in cases where we observe universal effects / preconditions.
         :param extra_lifted_object: the additional lifted object matching the grounded observed one.
         """
-        self.logger.info(f"Trying to match the grounded predicate - {grounded_predicate.untyped_representation} "
+        self.logger.debug(f"Trying to match the grounded predicate - {grounded_predicate.untyped_representation} "
                          f"to the action call {str(action_call)}")
         if len(grounded_predicate.signature) == 0:
             self.logger.debug("The predicate has no parameters, by default matches the action!")
@@ -83,9 +83,10 @@ class PredicatesMatcher:
         constants = self.matcher_domain.constants
         grounded_predicate_call = grounded_predicate.grounded_objects
 
-        action_grounded_objects = action_call.parameters + list(constants.keys()) if extra_grounded_object is None \
+        constants_in_predicate = [obj for obj in grounded_predicate_call if obj in constants]
+        action_grounded_objects = action_call.parameters + constants_in_predicate if extra_grounded_object is None \
             else action_call.parameters + [extra_grounded_object]
-        lifted_action_params = list(lifted_action_data.signature.keys()) + list(constants.keys()) \
+        lifted_action_params = list(lifted_action_data.signature.keys()) + constants_in_predicate \
             if extra_lifted_object is None else list(lifted_action_data.signature.keys()) + [extra_lifted_object]
 
         if contains_duplicates(action_call.parameters):
@@ -99,7 +100,7 @@ class PredicatesMatcher:
             possible_match_action_objects, lifted_parameters = self._extract_combinations_data(possible_permutation)
             if set(possible_match_action_objects) == set(grounded_predicate_call):
                 combined_types = {**lifted_action_data.signature}
-                combined_types.update({name: constants[name].type for name in constants})
+                combined_types.update({name: constants[name].type for name in constants_in_predicate})
                 if extra_lifted_object is not None:
                     self.logger.debug(f"Adding the extra lifted object {extra_lifted_object} to the signature.")
                     additional_lifted_parameter = [key for key in grounded_predicate.object_mapping if
@@ -117,8 +118,8 @@ class PredicatesMatcher:
                                                                     grounded_base_params)
         return possible_matches
 
-    def get_injective_match(self, grounded_predicate: GroundedPredicate, action_call: ActionCall) -> Optional[
-        Predicate]:
+    def get_injective_match(self, grounded_predicate: GroundedPredicate,
+                            action_call: ActionCall) -> Optional[Predicate]:
         """Get the injective match for the predicate and the action.
 
         :param grounded_predicate: the grounded predicate that was observed.
@@ -145,7 +146,7 @@ class PredicatesMatcher:
         :param extra_lifted_object: the additional lifted object matching the grounded observed one.
         :return: a list of possible preconditions for the action that is being executed.
         """
-        self.logger.info(f"Finding the possible matches for the grounded action - {str(grounded_action_call)}")
+        self.logger.debug(f"Finding the possible matches for the grounded action - {str(grounded_action_call)}")
         possible_matches = []
         for state_predicate in state_literals:
             if extra_grounded_object is None or extra_grounded_object not in state_predicate.grounded_objects:

@@ -3,13 +3,13 @@ import logging
 import time
 from collections import defaultdict
 from itertools import combinations
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict
 
 from pddl_plus_parser.models import Observation, Predicate, ActionCall, State, Domain, ObservedComponent, PDDLObject, \
     GroundedPredicate
 
 from sam_learning.core import PredicatesMatcher, extract_effects, LearnerDomain, contains_duplicates, \
-    VocabularyCreator
+    VocabularyCreator, EnvironmentSnapshot
 
 
 class SAMLearner:
@@ -23,28 +23,24 @@ class SAMLearner:
     matcher: PredicatesMatcher
     observed_actions: List[str]
     safe_actions: List[str]
-    previous_state_positive_predicates: Set[GroundedPredicate]
-    previous_state_negative_predicates: Set[GroundedPredicate]
-    next_state_negative_predicates: Set[GroundedPredicate]
-    next_state_positive_predicates: Set[GroundedPredicate]
+    triplet_snapshot: EnvironmentSnapshot
     current_trajectory_objects: Dict[str, PDDLObject]
     learning_start_time: float
     learning_end_time: float
+    cannot_be_effect: Dict[str, List[Predicate]]
 
     def __init__(self, partial_domain: Domain):
         self.logger = logging.getLogger(__name__)
         self.partial_domain = LearnerDomain(domain=partial_domain)
         self.matcher = PredicatesMatcher(partial_domain)
-        self.observed_actions = []
         self.vocabulary_creator = VocabularyCreator()
+        self.triplet_snapshot = EnvironmentSnapshot(partial_domain=partial_domain)
+        self.observed_actions = []
         self.safe_actions = []
-        self.previous_state_positive_predicates = set()
-        self.previous_state_negative_predicates = set()
-        self.next_state_positive_predicates = set()
-        self.next_state_negative_predicates = set()
         self.current_trajectory_objects = {}
         self.learning_start_time = 0
         self.learning_end_time = 0
+        self.cannot_be_effect = {action: [] for action in self.partial_domain.actions}
 
     def _remove_unobserved_actions_from_partial_domain(self):
         """Removes the actions that were not observed from the partial domain."""
@@ -53,66 +49,36 @@ class SAMLearner:
         for action in actions_to_remove:
             self.partial_domain.actions.pop(action)
 
-    def _create_complete_world_state(self, relevant_objects: Dict[str, PDDLObject],
-                                     state: State) -> Tuple[Set[GroundedPredicate], Set[GroundedPredicate]]:
-        """Creates a complete representation of the world state from the observed objects in the trajectory.
+    def _handle_consts_in_effects(self, grounded_action: ActionCall) -> None:
+        """The function filters out literals that cannot be effects because they are not observed in the next state.
 
-        :param relevant_objects: the objects extracted from the trajectory which are relevant to the action.
-        :param state: the state that contains only the predicates that are true in it.
-        :return: a complete representation of the world state containing both positive predicates and negative
-            predicates.
+        :param grounded_action: the grounded action that was executed according to the trajectory.
         """
-        self.logger.debug("Creating a complete world state")
-        positive_state_predicates = set()
-        negative_state_predicates = set()
-        vocabulary = self.vocabulary_creator.create_vocabulary(domain=self.partial_domain,
-                                                               observed_objects=relevant_objects)
+        current_action = self.partial_domain.actions[grounded_action.name]
+        next_state_predicates = set(self.matcher.get_possible_literal_matches(
+            grounded_action, list(self.triplet_snapshot.next_state_predicates)))
 
-        for lifted_predicate_name, possible_missing_predicates in vocabulary.items():
-            if lifted_predicate_name not in state.state_predicates:
-                negative_state_predicates.update([GroundedPredicate(name=p.name, signature=p.signature,
-                                                                    object_mapping=p.object_mapping, is_positive=False)
-                                                  for p in possible_missing_predicates])
-                continue
+        self.logger.debug("Removing literals that cannot be effects from the action's effects.")
+        current_action.discrete_effects = current_action.discrete_effects.difference(
+            self.cannot_be_effect[grounded_action.name])
 
-            for predicate in state.state_predicates[lifted_predicate_name]:
-                predicate.is_positive = True
+        possible_lifted_effects = current_action.discrete_effects
+        possible_grounded_effect = []
+        for lifted_effect in possible_lifted_effects:
+            grounded_objects_and_consts = grounded_action.parameters + list(self.partial_domain.constants)
+            lifted_params_and_consts = list(lifted_effect.signature.keys()) + list(self.partial_domain.constants)
+            object_mapping = {param_name: grounded_objects_and_consts[lifted_params_and_consts.index(param_name)] for
+                              param_name in lifted_effect.signature.keys()}
+            possible_grounded_effect.append((lifted_effect, GroundedPredicate(
+                lifted_effect.name, lifted_effect.signature, object_mapping, lifted_effect.is_positive)))
 
-            state_predicate_strs = [predicate.untyped_representation for predicate in
-                                    state.state_predicates[lifted_predicate_name]]
-            filtered_grounded_state_predicates = [predicate for predicate in possible_missing_predicates if
-                                                  predicate.untyped_representation not in state_predicate_strs]
-            filtered_grounded_state_predicates_str = [predicate.untyped_representation for predicate in
-                                                      filtered_grounded_state_predicates]
-            negative_state_predicates.update([GroundedPredicate(name=p.name, signature=p.signature,
-                                                                object_mapping=p.object_mapping, is_positive=False)
-                                              for p in filtered_grounded_state_predicates])
-
-        for lifted_predicate_name, grounded_state_predicates in state.state_predicates.items():
-            positive_state_predicates.update([GroundedPredicate(name=p.name, signature=p.signature,
-                                                                object_mapping=p.object_mapping, is_positive=True)
-                                              for p in grounded_state_predicates])
-
-        return positive_state_predicates, negative_state_predicates
-
-    def _create_fully_observable_triplet_predicates(
-            self, current_action: ActionCall, previous_state: State, next_state: State,
-            should_ignore_action: bool = False) -> None:
-        """Sets the fully observable previous state and next state predicates for the current action.
-
-        :param current_action: the action that is currently being executed.
-        :param previous_state: the state prior to the action's execution.
-        :param next_state: the state following the action's execution.
-        :param should_ignore_action: whether the action should be ignored and then use all trajectory objects or not.
-        """
-        relevant_objects = {object_name: object_data for object_name, object_data in
-                            self.current_trajectory_objects.items()
-                            if object_name in current_action.parameters} \
-            if not should_ignore_action else self.current_trajectory_objects
-        self.previous_state_positive_predicates, self.previous_state_negative_predicates = \
-            self._create_complete_world_state(relevant_objects=relevant_objects, state=previous_state)
-        self.next_state_positive_predicates, self.next_state_negative_predicates = \
-            self._create_complete_world_state(relevant_objects=relevant_objects, state=next_state)
+        relevant_serialized_state = [predicate.untyped_representation for predicate in next_state_predicates]
+        for lifted_effect, grounded_effect in possible_grounded_effect:
+            if grounded_effect.is_positive and grounded_effect.untyped_representation not in relevant_serialized_state \
+                    or not grounded_effect.is_positive and grounded_effect.untyped_representation in \
+                    relevant_serialized_state:
+                self.cannot_be_effect[grounded_action.name].append(lifted_effect)
+                current_action.discrete_effects.remove(lifted_effect)
 
     def _handle_action_effects(self, grounded_action: ActionCall, previous_state: State,
                                next_state: State) -> Tuple[List[Predicate], List[Predicate]]:
@@ -125,8 +91,7 @@ class SAMLearner:
         :return: the effect containing the add and del list of predicates.
         """
         self.logger.debug(f"Starting to learn the effects of {str(grounded_action)}.")
-        grounded_add_effects, grounded_del_effects = extract_effects(
-            previous_state, next_state, add_predicates_sign=True)
+        grounded_add_effects, grounded_del_effects = extract_effects(previous_state, next_state)
         self.logger.debug("Updating the negative state predicates based on the action's execution.")
         lifted_add_effects = self.matcher.get_possible_literal_matches(grounded_action, list(grounded_add_effects))
         lifted_delete_effects = self.matcher.get_possible_literal_matches(grounded_action, list(grounded_del_effects))
@@ -138,27 +103,29 @@ class SAMLearner:
         :param grounded_action: the grounded action that is being executed in the trajectory component.
         """
         current_action = self.partial_domain.actions[grounded_action.name]
-        positive_predicates = set(self.matcher.get_possible_literal_matches(
-            grounded_action, list(self.previous_state_positive_predicates)))
-        negative_predicates = set(self.matcher.get_possible_literal_matches(
-            grounded_action, list(self.previous_state_negative_predicates)))
+        previous_state_predicates = set(self.matcher.get_possible_literal_matches(
+            grounded_action, list(self.triplet_snapshot.previous_state_predicates)))
 
-        current_action.positive_preconditions.intersection_update(positive_predicates)
-        current_action.negative_preconditions.intersection_update(negative_predicates)
+        conditions_to_remove = []
+        for current_precondition in current_action.preconditions.root.operands:
+            # assuming that the predicates in the preconditions are NOT nested.
+            if isinstance(current_precondition, Predicate) and current_precondition not in previous_state_predicates:
+                conditions_to_remove.append(current_precondition)
+
+        for condition in conditions_to_remove:
+            current_action.preconditions.remove_condition(condition)
 
     def _add_new_action_preconditions(self, grounded_action: ActionCall) -> None:
         """General method to add new action's discrete preconditions.
 
         :param grounded_action: the action that is currently being executed.
         """
-        observed_action = self.partial_domain.actions[grounded_action.name]
-        possible_preconditions = set(self.matcher.get_possible_literal_matches(
-            grounded_action, list(self.previous_state_positive_predicates)))
-        negative_predicates = set(self.matcher.get_possible_literal_matches(
-            grounded_action, list(self.previous_state_negative_predicates)))
+        current_action = self.partial_domain.actions[grounded_action.name]
+        previous_state_predicates = set(self.matcher.get_possible_literal_matches(
+            grounded_action, list(self.triplet_snapshot.previous_state_predicates)))
 
-        observed_action.positive_preconditions = possible_preconditions
-        observed_action.negative_preconditions = negative_predicates
+        for predicate in previous_state_predicates:
+            current_action.preconditions.add_condition(predicate)
 
     def _construct_learning_report(self) -> Dict[str, str]:
         """Constructs the learning report of the learned actions.
@@ -189,10 +156,7 @@ class SAMLearner:
         lifted_add_effects, lifted_delete_effects = self._handle_action_effects(
             grounded_action, previous_state, next_state)
 
-        observed_action.add_effects.update(lifted_add_effects)
-        observed_action.delete_effects.update(lifted_delete_effects)
-        observed_action.negative_preconditions.difference_update(lifted_delete_effects)
-
+        observed_action.discrete_effects.update(set(lifted_add_effects).union(lifted_delete_effects))
         self.observed_actions.append(observed_action.name)
         self.logger.debug(f"Finished adding the action {grounded_action.name}.")
 
@@ -210,9 +174,10 @@ class SAMLearner:
         lifted_add_effects, lifted_delete_effects = self._handle_action_effects(
             grounded_action, previous_state, next_state)
 
-        observed_action.add_effects.update(lifted_add_effects)
-        observed_action.delete_effects.update(lifted_delete_effects)
-        observed_action.negative_preconditions.difference_update(lifted_delete_effects)
+        observed_action.discrete_effects.update(set(lifted_add_effects).union(lifted_delete_effects))
+        if len(self.partial_domain.constants) > 0:
+            self._handle_consts_in_effects(grounded_action)
+
         self.logger.debug(f"Done updating the action - {grounded_action.name}")
 
     def _verify_parameter_duplication(self, grounded_action: ActionCall) -> bool:
@@ -230,7 +195,7 @@ class SAMLearner:
 
             for lifted_duplicates_list in grounded_signature_map.values():
                 for (obj1, obj2) in combinations(lifted_duplicates_list, 2):
-                    action.inequality_preconditions.discard((obj1, obj2))
+                    action.preconditions.root.inequality_preconditions.discard((obj1, obj2))
 
         return has_duplicates
 
@@ -247,7 +212,9 @@ class SAMLearner:
             self.logger.warning(f"{str(grounded_action)} contains duplicated parameters! Not suppoerted in SAM.")
             return
 
-        self._create_fully_observable_triplet_predicates(grounded_action, previous_state, next_state)
+        self.triplet_snapshot.create_snapshot(
+            previous_state=previous_state, next_state=next_state, current_action=grounded_action,
+            observation_objects=self.current_trajectory_objects)
         if grounded_action.name not in self.observed_actions:
             self.add_new_action(grounded_action, previous_state, next_state)
 
@@ -260,7 +227,7 @@ class SAMLearner:
         for action_name, action_data in self.partial_domain.actions.items():
             for (lifted_param1, lifted_param2) in combinations(action_data.parameter_names, 2):
                 if action_data.signature[lifted_param1] == action_data.signature[lifted_param2]:
-                    action_data.inequality_preconditions.add((lifted_param1, lifted_param2))
+                    action_data.preconditions.root.inequality_preconditions.add((lifted_param1, lifted_param2))
 
     def construct_safe_actions(self) -> None:
         """Constructs the single-agent actions that are safe to execute."""
@@ -277,16 +244,18 @@ class SAMLearner:
         self.logger.info(f"Finished learning the action model in "
                          f"{self.learning_end_time - self.learning_start_time} seconds.")
 
-    def are_state_different(self, previous_state: State, next_state: State) -> bool:
+    def are_states_different(self, previous_state: State, next_state: State) -> bool:
         """Checks if the previous state differs from the next state.
 
         :param previous_state: the previous state.
         :param next_state: the next state.
         :return: whether the states differ.
         """
+        self.logger.debug(f"Checking if the previous state {previous_state} "
+                          f"is different from the next state {next_state}")
         if previous_state.serialize() == next_state.serialize():
             self.logger.warning("The previous state is the same as the next state. "
-                                "This is not supported by the SAFE action model.")
+                                "This is not supported by the SAFE action model learning algorithm.")
             return False
 
         return True
@@ -303,12 +272,12 @@ class SAMLearner:
         for observation in observations:
             self.current_trajectory_objects = observation.grounded_objects
             for component in observation.components:
-                if not self.are_state_different(component.previous_state, component.next_state):
+                if not self.are_states_different(component.previous_state, component.next_state):
                     continue
 
                 self.handle_single_trajectory_component(component)
 
         self.construct_safe_actions()
         self.end_measure_learning_time()
-        learning_report = {action_name: "OK" for action_name in self.partial_domain.actions}
+        learning_report = self._construct_learning_report()
         return self.partial_domain, learning_report
