@@ -78,7 +78,7 @@ class EnvironmentSnapshot:
 
         return result
 
-    def create_snapshot(
+    def create_triplet_snapshot(
             self, previous_state: State, next_state: State, current_action: ActionCall,
             observation_objects: Dict[str, PDDLObject], specific_types: Optional[List[str]] = []) -> None:
         """Creates a snapshot of the environment.

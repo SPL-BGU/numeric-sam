@@ -99,7 +99,7 @@ def sync_snapshot(sam_learning: SAMLearner, component: ObservedComponent,
     else:
         all_types = []
 
-    sam_learning.triplet_snapshot.create_snapshot(
+    sam_learning.triplet_snapshot.create_triplet_snapshot(
         previous_state=previous_state, next_state=next_state, current_action=test_action_call,
         observation_objects=trajectory_objects, specific_types=all_types)
 
