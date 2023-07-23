@@ -17,10 +17,14 @@ from sam_learning.core.numeric_utils import construct_multiplication_strings, co
 
 
 class ConvexHullLearner:
+    """Class that learns the convex hull of the preconditions of an action."""
+    logger: logging.Logger
+    action_name: str
+    domain_functions: Dict[str, PDDLFunction]
+    convex_hull_error_file_path: Path
 
     def __init__(self, action_name: str, domain_functions: Dict[str, PDDLFunction]):
         self.logger = logging.getLogger(__name__)
-        self.previous_state_df = None
         self.convex_hull_error_file_path = Path(os.environ["CONVEX_HULL_ERROR_PATH"])
         self.action_name = action_name
         self.domain_functions = domain_functions
@@ -48,7 +52,8 @@ class ConvexHullLearner:
             with open(self.convex_hull_error_file_path, "at") as error_file:
                 error_file.write(f"{e}\n")
 
-            failure_reason = "Convex hull encountered an error condition and no solution was found"
+            failure_reason = f"Convex hull encountered an error condition and no solution was found " \
+                             f"for action {self.action_name}"
             self.logger.warning(failure_reason)
             raise NotSafeActionError(self.action_name, failure_reason, EquationSolutionType.convex_hull_not_found)
 
@@ -153,7 +158,7 @@ class ConvexHullLearner:
         if len(filtered_matrix.columns) <= 1:
             return equality_conditions, filtered_matrix
 
-        filtered_matrix, linear_dependency_conditions, _ = detect_linear_dependent_features(previous_state_matrix)
+        filtered_matrix, linear_dependency_conditions, _ = detect_linear_dependent_features(filtered_matrix)
         combined_conditions = equality_conditions + linear_dependency_conditions
         return combined_conditions, filtered_matrix
 
