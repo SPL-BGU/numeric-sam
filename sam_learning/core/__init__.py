@@ -15,3 +15,4 @@ from .numeric_utils import construct_multiplication_strings, prettify_coefficien
 from .polynomial_fluents_learning_algorithm import PolynomialFluentsLearningAlgorithm
 from .predicates_matcher import PredicatesMatcher
 from .vocabulary_creator import VocabularyCreator
+from .numeric_information_gain_learner import InformationGainLearner

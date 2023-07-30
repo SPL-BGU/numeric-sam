@@ -5,8 +5,7 @@ from collections import defaultdict
 from itertools import combinations
 from typing import List, Tuple, Dict, Set
 
-from pddl_plus_parser.models import Observation, Predicate, ActionCall, State, Domain, ObservedComponent, PDDLObject, \
-    GroundedPredicate
+from pddl_plus_parser.models import Observation, Predicate, ActionCall, State, Domain, ObservedComponent, PDDLObject
 
 from sam_learning.core import PredicatesMatcher, extract_effects, LearnerDomain, contains_duplicates, \
     VocabularyCreator, EnvironmentSnapshot
@@ -63,10 +62,9 @@ class SAMLearner:
         for predicate in action_predicate_vocabulary:
             if predicate.untyped_representation not in lifted_next_state_predicates_str:
                 self.cannot_be_effect[grounded_action.name].add(predicate)
-                discrete_effects_str = {effect.untyped_representation for effect in
-                                        self.partial_domain.actions[grounded_action.name].discrete_effects}
-                if predicate.untyped_representation in discrete_effects_str:
-                    self.partial_domain.actions[grounded_action.name].discrete_effects.remove(predicate)
+
+        for predicate in self.cannot_be_effect[grounded_action.name]:
+            self.partial_domain.actions[grounded_action.name].discrete_effects.discard(predicate)
 
     def _handle_action_effects(self, grounded_action: ActionCall, previous_state: State,
                                next_state: State) -> Tuple[List[Predicate], List[Predicate]]:
@@ -108,6 +106,7 @@ class SAMLearner:
 
         :param grounded_action: the action that is currently being executed.
         """
+        self.logger.debug(f"Adding the preconditions of {grounded_action.name} to the action model.")
         current_action = self.partial_domain.actions[grounded_action.name]
         previous_state_predicates = set(self.matcher.get_possible_literal_matches(
             grounded_action, list(self.triplet_snapshot.previous_state_predicates)))

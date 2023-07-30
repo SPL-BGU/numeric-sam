@@ -87,6 +87,11 @@ CURRENT_LOAD_TRAJECTORY_FUNCTION = PDDLFunction(name="current_load", signature={
 CURRENT_LOAD_GROUNDED_TRAJECTORY_FUNCTION = PDDLFunction(name="current_load", signature={"truck1": TRUCK_TYPE})
 WEIGHT_FUNCTION = PDDLFunction(name="weight", signature={"?c": CRATE_TYPE})
 
+MINECRAFT_MEDIUM_DOMAIN_PATH = EXAMPLES_DIR_PATH / "domain_minecraft_medium.pddl"
+MINECRAFT_MEDIUM_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "trajectory_minecraft_medium.trajectory"
+MINECRAFT_MEDIUM_FLUENTS_MAP_PATH = EXAMPLES_DIR_PATH / "fluents_map_minecraft_medium.json"
+
+
 
 def sync_snapshot(sam_learning: SAMLearner, component: ObservedComponent,
                   trajectory_objects: Dict[str, PDDLObject], should_include_all_objects: bool = False) -> None:
