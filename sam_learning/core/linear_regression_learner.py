@@ -1,19 +1,17 @@
 """This module contains the LinearRegressionLearner class."""
 import logging
-from typing import Optional, List, Dict, Tuple, Union, Set
+from typing import Optional, List, Dict, Tuple, Set
 
 import numpy as np
-import sympy
-from multipledispatch import dispatch
-from pandas import DataFrame, Series
-from pddl_plus_parser.models import Precondition, NumericalExpressionTree, PDDLFunction, ConditionalEffect
+from pandas import DataFrame
+from pddl_plus_parser.models import Precondition, NumericalExpressionTree, PDDLFunction
 from sklearn.linear_model import LinearRegression
 
 from sam_learning.core.exceptions import NotSafeActionError
 from sam_learning.core.learning_types import EquationSolutionType, ConditionType
 from sam_learning.core.numeric_utils import detect_linear_dependent_features, construct_linear_equation_string, \
     construct_non_circular_assignment, construct_multiplication_strings, prettify_coefficients, \
-    construct_numeric_conditions, construct_numeric_effects, filter_constant_features
+    construct_numeric_conditions, construct_numeric_effects, filter_constant_features, get_num_independent_equations
 
 LABEL_COLUMN = "label"
 NEXT_STATE_PREFIX = "next_state_"  # prefix for the next state variables.
@@ -51,12 +49,9 @@ class LinearRegressionLearner:
         if len(values_df) == 1:
             return False
 
-        values_matrix = values_df.to_numpy()
-        num_dimensions = values_matrix.shape[1] + 1  # +1 for the bias.
-        num_rows = values_matrix.shape[0]
-        values_matrix_with_bias = np.c_[values_matrix, np.ones(num_rows)]
-        _, pivot_cols = sympy.Matrix(values_matrix_with_bias).rref()
-        if len(pivot_cols) >= num_dimensions:
+        num_dimensions = len(values_df.columns.tolist()) + 1  # +1 for the bias.
+        num_independent_rows = get_num_independent_equations(values_df)
+        if num_independent_rows >= num_dimensions:
             return True
 
         failure_reason = f"There are too few independent rows of data! " \
@@ -109,13 +104,6 @@ class LinearRegressionLearner:
         coefficient_vector, learning_score = self._solve_regression_problem(
             regression_array, function_post_values, allow_unsafe_learning)
 
-        if all([coef == 0 for coef in coefficient_vector]) and len(regression_df[LABEL_COLUMN].unique()) == 1 \
-                and regression_df[LABEL_COLUMN].unique() == 0:
-            self.logger.debug("The algorithm designated a vector of zeros to the equation "
-                              "which means that there are not coefficients and the label itself is also zero. "
-                              "Assuming assignment function of the value 0.0.")
-            return f"(assign {lifted_function} {0.0})"
-
         functions_and_dummy = list(regression_df.columns[:-1]) + ["(dummy)"]
         if lifted_function in regression_df.columns and \
                 coefficient_vector[list(regression_df.columns).index(lifted_function)] == 1 and \
@@ -153,6 +141,30 @@ class LinearRegressionLearner:
         constructed_right_side = construct_linear_equation_string(multiplication_functions)
         return f"(assign {lifted_function} {constructed_right_side})"
 
+    @staticmethod
+    def _extract_const_conditions(precondition_statements: List[List[str]]) -> List[str]:
+        """Extract conditions that are constant for all the samples.
+
+        Note:
+            These preconditions that appear in all samples will be considered axioms and will be added the
+            general preconditions to create a more compact version of the action's preconditions.
+
+        :param precondition_statements: the precondition statements.
+        :return: the extracted constant conditions.
+        """
+        const_preconditions = set()
+        for conjunction_statement in precondition_statements:
+            for condition in conjunction_statement:
+                if all([condition in other_conjunction for other_conjunction in precondition_statements]):
+                    const_preconditions.add(condition)
+                    continue
+
+        for conjunction_statement in precondition_statements:
+            for const_condition in const_preconditions:
+                conjunction_statement.remove(const_condition)
+
+        return list(const_preconditions)
+
     def _construct_restrictive_numeric_preconditions(self, combined_data: DataFrame) -> Precondition:
         """Constructs the restrictive numeric preconditions for the action.
 
@@ -162,6 +174,7 @@ class LinearRegressionLearner:
         :param combined_data: the combined data of the previous and next states.
         :return: the restrictive numeric preconditions.
         """
+        self.logger.debug(f"Constructing the restrictive numeric preconditions for the action {self.action_name}.")
         precondition_statements = []
         for index, row in combined_data.iterrows():
             additional_conditions = []
@@ -172,18 +185,28 @@ class LinearRegressionLearner:
                 else:  # the fluent is belongs to the previous state
                     additional_conditions.append(f"(= {fluent} {row[fluent]})")
 
-            single_precondition = construct_numeric_conditions(
-                additional_conditions, ConditionType.conjunctive, self.domain_functions)
-            precondition_statements.append(single_precondition)
+            precondition_statements.append(additional_conditions)
 
         if len(precondition_statements) == 1:
-            return precondition_statements[0]
+            return construct_numeric_conditions(
+                precondition_statements[0], ConditionType.conjunctive, self.domain_functions)
 
-        disjunctive_precondition = Precondition("or")
+        const_preconditions = self._extract_const_conditions(precondition_statements)
+        combined_preconditions = None
+        if len(const_preconditions) > 0:
+            combined_preconditions = construct_numeric_conditions(
+                const_preconditions, ConditionType.conjunctive, self.domain_functions)
+
+        dijsunctive_preconditions = Precondition("or")
         for precondition_statement in precondition_statements:
-            disjunctive_precondition.add_condition(precondition_statement)
+            dijsunctive_preconditions.add_condition(construct_numeric_conditions(
+                precondition_statement, ConditionType.conjunctive, self.domain_functions))
 
-        return disjunctive_precondition
+        if combined_preconditions is not None:
+            combined_preconditions.add_condition(dijsunctive_preconditions)
+            return combined_preconditions
+
+        return dijsunctive_preconditions
 
     def _construct_effect_from_single_sample(self, sample_data: DataFrame) -> Set[NumericalExpressionTree]:
         """constructs the effect from a single sample.
