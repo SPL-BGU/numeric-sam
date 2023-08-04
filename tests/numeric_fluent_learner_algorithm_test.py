@@ -276,8 +276,7 @@ def test_construct_assignment_equations_with_fewer_equations_than_needed_to_crea
     effects, numeric_preconditions, learned_perfectly = load_action_state_fluent_storage.construct_assignment_equations(
         allow_unsafe_learning=False)
     assert learned_perfectly
-    assert numeric_preconditions is not None
-    assert isinstance(numeric_preconditions, Precondition)
+    assert numeric_preconditions is None
     assert effects is not None
 
 
