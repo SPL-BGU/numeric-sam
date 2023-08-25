@@ -23,10 +23,12 @@ LEGAL_LEARNING_SCORE = 1.00
 
 class LinearRegressionLearner:
 
-    def __init__(self, action_name: str, domain_functions: Dict[str, PDDLFunction]):
+    def __init__(
+            self, action_name: str, domain_functions: Dict[str, PDDLFunction], applied_feature_selection: bool = False):
         self.logger = logging.getLogger(__name__)
         self.action_name = action_name
         self.domain_functions = domain_functions
+        self._applied_feature_selection = applied_feature_selection
 
     @staticmethod
     def _combine_states_data(prev_state: Dict[str, List[float]], next_state: Dict[str, List[float]]) -> DataFrame:
@@ -310,4 +312,6 @@ class LinearRegressionLearner:
             return construct_numeric_effects(assignment_statements, self.domain_functions), \
                 self._construct_restrictive_numeric_preconditions(features_df, combined_conditions), False
 
-        return construct_numeric_effects(assignment_statements, self.domain_functions), None, True
+        return (construct_numeric_effects(assignment_statements, self.domain_functions),
+                construct_numeric_conditions(combined_conditions, ConditionType.conjunctive, self.domain_functions),
+                True)
