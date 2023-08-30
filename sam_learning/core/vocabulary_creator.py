@@ -1,11 +1,13 @@
+import itertools
 import logging
 from collections import defaultdict
 from itertools import permutations
 from typing import List, Tuple, Dict, Set, Union, Optional
 
-from pddl_plus_parser.models import Predicate, PDDLObject, GroundedPredicate, PDDLType, Domain, PDDLFunction
+from pddl_plus_parser.models import Predicate, PDDLObject, GroundedPredicate, PDDLType, Domain, PDDLFunction, \
+    ActionCall, Action
 
-from sam_learning.core.learner_domain import LearnerDomain
+from sam_learning.core.learner_domain import LearnerDomain, LearnerAction
 
 
 def choose_objects_subset(array: List[str], subset_size: int) -> List[Tuple[str]]:
@@ -25,7 +27,8 @@ class VocabularyCreator:
         self.logger = logging.getLogger(__name__)
 
     def _validate_type_matching(self, grounded_signatures: Dict[str, PDDLType],
-                                lifted_variable_to_match: Union[Predicate, PDDLFunction]) -> bool:
+                                lifted_variable_to_match: Union[
+                                    Predicate, PDDLFunction, Action, LearnerAction]) -> bool:
         """Validates that the types of the grounded signature match the types of the predicate signature.
 
         :param grounded_signatures: the grounded predicate signature.
@@ -136,4 +139,27 @@ class VocabularyCreator:
                 vocabulary.update({lifted_predicate, negative_lifted_predicate})
 
         self.logger.debug(f"Created vocabulary of size {len(vocabulary)}")
+        return vocabulary
+
+    def create_grounded_actions_vocabulary(self, domain: Union[LearnerDomain, Domain],
+                                           observed_objects: Dict[str, PDDLObject]) -> Set[ActionCall]:
+        """"Create a vocabulary of random combinations of the actions parameters and objects.
+
+        :param domain: the domain containing the actions and the action signatures.
+        :param observed_objects: the objects that were observed in the trajectory.
+        :return: list containing all the actions with the different combinations of parameters.
+        """
+        vocabulary = set()
+        objects_and_consts = list(observed_objects.values()) + list(domain.constants.values())
+        for action_name, action in domain.actions.items():
+            possible_objects_for_parameters = {
+                parameter_name: [obj for obj in objects_and_consts if obj.type.is_sub_type(parameter_type)]
+                for parameter_name, parameter_type in action.signature.items()}
+            signature_options = list(itertools.product(*possible_objects_for_parameters.values()))
+            for signature_option in signature_options:
+                grounded_action = ActionCall(
+                    name=action_name, grounded_parameters=[obj.name for obj in signature_option])
+                self.logger.debug(f"Created grounded action {str(grounded_action)}")
+                vocabulary.add(grounded_action)
+
         return vocabulary
