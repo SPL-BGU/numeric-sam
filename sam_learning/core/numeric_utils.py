@@ -12,7 +12,7 @@ from sklearn.feature_selection import VarianceThreshold
 
 from sam_learning.core.learning_types import ConditionType
 
-EPSILON = 1e-10
+EPSILON = 1e-4
 
 
 def get_num_independent_equations(data_matrix: DataFrame) -> int:
@@ -53,6 +53,9 @@ def construct_multiplication_strings(coefficients_vector: Union[np.ndarray, List
         if func == "(dummy)":
             product_components.append(f"{prettify_floating_point_number(round(coefficient, 4))}")
 
+        elif coefficient == 1.0:
+            product_components.append(func)
+
         else:
             product_components.append(f"(* {func} {prettify_floating_point_number(round(coefficient, 4))})")
 
@@ -70,24 +73,32 @@ def prettify_coefficients(coefficients: List[float]) -> List[float]:
     return prettified_coefficients
 
 
-def construct_pca_variable_strings(function_variables: List[str], pca_mean: Union[np.ndarray, List[float]],
-                                   pca_components: Union[np.ndarray, List[List[float]]]) -> List[str]:
+def construct_projected_variable_strings(function_variables: List[str], shift_point: Union[np.ndarray, List[float]],
+                                         projection_basis: Union[np.ndarray, List[List[float]]]) -> List[str]:
     """Constructs the strings representing the multiplications of the function variables with the coefficient.
 
     :param function_variables: the name of the numeric fluents that are being used.
-    :param pca_mean: the mean of the PCA model.
-    :param pca_components: the components of the PCA model.
+    :param shift_point: the point in which the data was shifted according to.
+    :param projection_basis: the basis in which the data was projected to.
     :return: the new variable names after applying the PCA model transformation
     """
     shifted_by_mean = []
-    for func, mean_val in zip(function_variables, pca_mean):
-        component_function = f"(- {func} {prettify_floating_point_number(round(mean_val, 4))})"
+    for func, shift_value in zip(function_variables, shift_point):
+        component_function = func if shift_value == 0.0 else \
+            f"(- {func} {prettify_floating_point_number(round(shift_value, 4))})"
         shifted_by_mean.append(component_function)
 
     sum_of_product_by_components = []
-    for row in range(len(pca_components)):
+    for row in range(len(projection_basis)):
         product_by_components_row = []
-        for shifted, component in zip(shifted_by_mean, pca_components[row]):
+        for shifted, component in zip(shifted_by_mean, projection_basis[row]):
+            if abs(round(component, 4)) <= EPSILON:
+                continue
+
+            if component == 1.0:
+                product_by_components_row.append(shifted)
+                continue
+
             product_by_components_row.append(f"(* {shifted} {prettify_floating_point_number(round(component, 4))})")
 
         sum_of_product_by_components.append(construct_linear_equation_string(product_by_components_row))
@@ -257,3 +268,33 @@ def construct_numeric_effects(
         numeric_effects.append(numeric_expression)
 
     return {NumericalExpressionTree(expr) for expr in numeric_effects}
+
+
+def extended_gram_schmidt(
+        input_basis_vectors: List[List[float]], eigen_vectors: Optional[List[List[float]]] = None) -> List[List[float]]:
+    """Runs the extended Gram-Schmidt algorithm on the input basis vectors.
+
+    Note:
+        The algorithm is extended in the that it can handle the additional input eigen vectors and return the
+        orthonormal basis vectors of the input basis vectors and eigen vectors.
+
+    :param input_basis_vectors: The input basis vectors.
+    :param eigen_vectors: The eigen vectors - optional and can be none.
+    :return: The orthonormal basis vectors of the input basis vectors and eigen vectors.
+    """
+    non_normal_vectors = eigen_vectors.copy() if eigen_vectors else []
+    normal_vectors = []
+    for vector in input_basis_vectors:
+        # Gram Schmidt magic
+        projected_vector = vector - np.sum(
+            [(np.dot(vector, b) / np.linalg.norm(b) ** 2) * np.array(b) for b in non_normal_vectors], axis=0)
+        if not (np.absolute(projected_vector) > EPSILON).any():
+            continue
+
+        non_normal_vectors.append(projected_vector.tolist())
+        normal_vectors.append((projected_vector / np.linalg.norm(projected_vector)).tolist())
+
+    if not eigen_vectors:
+        return normal_vectors
+
+    return [b for b in normal_vectors if b not in eigen_vectors]

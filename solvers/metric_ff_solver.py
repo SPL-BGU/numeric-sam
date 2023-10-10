@@ -29,9 +29,9 @@ class MetricFFSolver:
         :param solution_path: the path to the solution file.
         :return: the error message.
         """
-        with open(solution_path, "r") as solution_file:
+        with open(solution_path, "rb") as solution_file:
             solution_content = solution_file.read()
-            return solution_content
+            return solution_content.decode("utf-8", errors="ignore")
 
     def _run_metric_ff_process(self, run_command: str, solution_path: Path,
                                problem_file_path: Path, solving_stats: Dict[str, str]) -> None:
@@ -81,12 +81,13 @@ class MetricFFSolver:
             solution_path.unlink(missing_ok=True)
 
     def execute_solver(self, problems_directory_path: Path, domain_file_path: Path,
-                       problems_prefix: str = "pfile") -> Dict[str, str]:
+                       problems_prefix: str = "pfile", tolerance: float = 0.1) -> Dict[str, str]:
         """Solves numeric and PDDL+ problems using the Metric-FF algorithm and outputs the solution into a file.
 
         :param problems_directory_path: the path to the problems directory.
         :param domain_file_path: the path to the domain file.
         :param problems_prefix: the prefix of the problems files.
+        :param tolerance: the numeric tolerance for errors in the Metric-FF solver.
         """
         solving_stats = {}
         os.chdir(METRIC_FF_DIRECTORY)
@@ -94,7 +95,7 @@ class MetricFFSolver:
         for problem_file_path in problems_directory_path.glob(f"{problems_prefix}*.pddl"):
             self.logger.debug(f"Starting to work on solving problem - {problem_file_path.stem}")
             solution_path = problems_directory_path / f"{problem_file_path.stem}.solution"
-            run_command = f"./ff -o {domain_file_path} -f {problem_file_path} -s 0 > {solution_path}"
+            run_command = f"./ff -o {domain_file_path} -f {problem_file_path} -s 0 -t {tolerance} > {solution_path}"
             self._run_metric_ff_process(run_command, solution_path, problem_file_path, solving_stats)
 
         return solving_stats

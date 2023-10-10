@@ -9,12 +9,12 @@ import numpy as np
 from pandas import DataFrame, Series
 from pddl_plus_parser.models import Precondition, PDDLFunction
 from scipy.spatial import ConvexHull, convex_hull_plot_2d, QhullError
-from sklearn.decomposition import PCA
 
 from sam_learning.core.learning_types import ConditionType
 from sam_learning.core.numeric_utils import construct_multiplication_strings, construct_linear_equation_string, \
-    detect_linear_dependent_features, prettify_coefficients, construct_numeric_conditions, filter_constant_features, \
-    construct_pca_variable_strings
+    prettify_coefficients, construct_numeric_conditions, construct_projected_variable_strings, extended_gram_schmidt
+
+EPSILON = 1e-10
 
 
 class ConvexHullLearner:
@@ -30,8 +30,26 @@ class ConvexHullLearner:
         self.action_name = action_name
         self.domain_functions = domain_functions
 
+    def _execute_convex_hull(
+            self, points: np.ndarray, display_mode: bool = True) -> Tuple[List[List[float]], List[float]]:
+        """Runs the convex hull algorithm on the given input points.
+
+        :param points: the points to run the convex hull algorithm on.
+        :param display_mode: whether to display the convex hull.
+        :return: the coefficients of the planes that represent the convex hull and the border point.
+        """
+        hull = ConvexHull(points)
+        self._display_convex_hull(display_mode, hull, points.shape[1])
+
+        A = hull.equations[:, :points.shape[1]]
+        b = -hull.equations[:, points.shape[1]]
+        coefficients = [prettify_coefficients(row) for row in A]
+        border_point = prettify_coefficients(b)
+        return coefficients, border_point
+
     def _create_convex_hull_linear_inequalities(
-            self, points_df: DataFrame, display_mode: bool = True) -> Tuple[List[List[float]], List[float], List[str]]:
+            self, points_df: DataFrame, display_mode: bool = True) -> Tuple[
+        List[List[float]], List[float], List[str], Optional[List[str]]]:
         """Create the convex hull and returns the matrix representing the inequalities.
 
         :param points_df: the dataframe containing the points that represent the values of the function in the states
@@ -43,44 +61,55 @@ class ConvexHullLearner:
         """
         self.logger.debug(f"Creating convex hull for action {self.action_name}.")
         points = points_df.to_numpy()
-        try:
-            hull = ConvexHull(points)
-            num_dimensions = points.shape[1]
-            self._display_convex_hull(display_mode, hull, num_dimensions)
-            A = hull.equations[:, :num_dimensions]
-            b = -hull.equations[:, num_dimensions]
-            return [prettify_coefficients(row) for row in A], prettify_coefficients(b), points_df.columns.tolist()
+        shift_axis = points[0].tolist()  # selected the first vector to be the start of the axis.
+        shifted_points = points - shift_axis
+        self.logger.debug("Finding the basis vectors for the projected CH using the extended Gram-Schmidt method.")
+        projection_basis = extended_gram_schmidt(shifted_points)
+        if len(shifted_points) > len(points_df.columns.tolist()) and len(projection_basis) == len(
+                points_df.columns.tolist()):
+            self.logger.debug("The points are spanning the original space and the basis is full rank, "
+                              "no need to project the points.")
+            coefficients, border_point = self._execute_convex_hull(points, display_mode)
+            return coefficients, border_point, points_df.columns.tolist(), []
 
-        except (QhullError, ValueError):
-            self.logger.debug("Convex hull failed to create a convex hull, using PCA to reduce the dimensionality.")
-            rank = np.linalg.matrix_rank(
-                points)  # Rank of the array is the number of singular values of the array that are greater than tol.
-            model = PCA(n_components=rank - 1).fit(points)  # need rank -1 since to create CH we need rank + 1 samples.
-            pred_points = model.transform(points)
-            hull = ConvexHull(pred_points)
-            PCA_A = hull.equations[:, :pred_points.shape[1]]
-            b = -hull.equations[:, pred_points.shape[1]]
-            coefficients = [prettify_coefficients(row) for row in PCA_A]
-            border_point = prettify_coefficients(b)
-            transformed_variables = construct_pca_variable_strings(
-                points_df.columns.tolist(), model.mean_, model.components_)
-            return coefficients, border_point, transformed_variables
+        projected_points = np.dot(shifted_points, np.array(projection_basis).T)
+        if projected_points.shape[1] == 1:
+            self.logger.debug("The convex hull is single dimensional, creating min-max conditions on the new basis.")
+            coefficients = [[-1], [1]]
+            border_point = prettify_coefficients([projected_points.min(), projected_points.max()])
+
+        else:
+            coefficients, border_point = self._execute_convex_hull(projected_points, display_mode)
+
+        transformed_vars = construct_projected_variable_strings(
+            points_df.columns.tolist(), shift_axis, projection_basis)
+
+        self.logger.debug("Constructing the conditions to verify that points are in the correct span.")
+        diagonal_eye = [list(vector) for vector in np.eye(points.shape[1])]
+        orthnormal_span = extended_gram_schmidt(diagonal_eye, projection_basis)
+        transformed_orthonormal_vars = construct_projected_variable_strings(
+            points_df.columns.tolist(), shift_axis, diagonal_eye)
+        span_verification_conditions = self._construct_pddl_inequality_scheme(
+            np.array(orthnormal_span), np.zeros(len(orthnormal_span)), transformed_orthonormal_vars, sign_to_use="=")
+        return coefficients, border_point, transformed_vars, span_verification_conditions
 
     @staticmethod
     def _construct_pddl_inequality_scheme(
-            coefficient_matrix: np.ndarray, border_points: np.ndarray, headers: List[str]) -> List[str]:
+            coefficient_matrix: np.ndarray, border_points: np.ndarray, headers: List[str],
+            sign_to_use: str = "<=") -> List[str]:
         """Construct the inequality strings in the appropriate PDDL format.
 
         :param coefficient_matrix: the matrix containing the coefficient vectors for each inequality.
         :param border_points: the convex hull point which ensures that Ax <= b.
         :param headers: the headers of the columns in the coefficient matrix.
+        :param sign_to_use: the sign to use in the inequalities (for cases when we want to use equalities).
         :return: the inequalities PDDL formatted strings.
         """
         inequalities = set()
         for inequality_coefficients, border_point in zip(coefficient_matrix, border_points):
             multiplication_functions = construct_multiplication_strings(inequality_coefficients, headers)
             constructed_left_side = construct_linear_equation_string(multiplication_functions)
-            inequalities.add(f"(<= {constructed_left_side} {border_point})")
+            inequalities.add(f"({sign_to_use} {constructed_left_side} {border_point})")
 
         return list(inequalities)
 
@@ -160,27 +189,6 @@ class ConvexHullLearner:
         return construct_numeric_conditions(
             conditions, condition_type=ConditionType.conjunctive, domain_functions=self.domain_functions)
 
-    def _filter_all_convex_hull_inconsistencies(self, previous_state_matrix: DataFrame) -> Tuple[List[str], DataFrame]:
-        """Filters out features that might prevent from the convex hull algorithm to work properly.
-
-        :param previous_state_matrix: the matrix of the previous state containing numeric values.
-        :return: the equality strings, the filtered matrix and the remaining fluents that will be used to create
-         the convex hull.
-        """
-        self.logger.debug(f"Now checking to see if there are columns that linearly dependent.")
-        if previous_state_matrix.shape[0] == 1:
-            self.logger.debug("There is only one sample of information to learn from, "
-                              "not enough to learn of linear dependency!")
-            return [], previous_state_matrix
-
-        filtered_matrix, equality_conditions, _ = filter_constant_features(previous_state_matrix.copy())
-        if len(filtered_matrix.columns) <= 1:
-            return equality_conditions, filtered_matrix
-
-        filtered_matrix, linear_dependency_conditions, _ = detect_linear_dependent_features(filtered_matrix)
-        combined_conditions = equality_conditions + linear_dependency_conditions
-        return combined_conditions, filtered_matrix
-
     def construct_safe_linear_inequalities(
             self, state_storge: Dict[str, List[float]],
             relevant_fluents: Optional[List[str]] = []) -> Precondition:
@@ -195,26 +203,13 @@ class ConvexHullLearner:
             self.logger.debug("Only one dimension is needed in the preconditions!")
             return self._construct_single_dimension_inequalities(state_data.loc[:, relevant_fluents[0]])
 
-        equality_conditions, filtered_pre_state_df = self._filter_all_convex_hull_inconsistencies(state_data)
-        if len(filtered_pre_state_df.columns) == 0:
-            self.logger.debug("After filtering, no dimensions remained in the preconditions!")
-            return construct_numeric_conditions(
-                equality_conditions, condition_type=ConditionType.conjunctive, domain_functions=self.domain_functions)
-
-        if filtered_pre_state_df.shape[1] < 2:
-            self.logger.debug("After filtering, only one dimension remained in the preconditions!")
-            return self._construct_single_dimension_inequalities(
-                filtered_pre_state_df.loc[:, filtered_pre_state_df.columns[0]], equality_conditions)
-
-        if filtered_pre_state_df.shape[0] <= 2 <= filtered_pre_state_df.shape[1]:
-            self.logger.debug("After filtering we have a line equation. Cannot compute linear line equation.'")
-            return self._create_disjunctive_preconditions(filtered_pre_state_df, equality_conditions)
-
         try:
-            A, b, column_names = self._create_convex_hull_linear_inequalities(
-                filtered_pre_state_df, display_mode=False)
+            A, b, column_names, additional_projection_conditions = self._create_convex_hull_linear_inequalities(
+                state_data, display_mode=False)
             inequalities_strs = self._construct_pddl_inequality_scheme(A, b, column_names)
-            inequalities_strs.extend(equality_conditions)
+            if additional_projection_conditions is not None:
+                inequalities_strs.extend(additional_projection_conditions)
+
             return construct_numeric_conditions(
                 inequalities_strs, condition_type=ConditionType.conjunctive, domain_functions=self.domain_functions)
 
@@ -222,4 +217,4 @@ class ConvexHullLearner:
             self.logger.warning("Convex hull failed to create a convex hull, using disjunctive preconditions "
                                 "(probably since the rank of the matrix is 2 and it cannot create a degraded "
                                 "convex hull).")
-            return self._create_disjunctive_preconditions(filtered_pre_state_df, equality_conditions)
+            return self._create_disjunctive_preconditions(state_data, [])
