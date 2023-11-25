@@ -65,7 +65,7 @@ class NumericFluentStateStorage:
             if len(state_values) == max_function_len:
                 new_next_state_storage[lifted_function].extend(state_values)
 
-        self.next_state_storage = new_prev_state_storage
+        self.next_state_storage = new_next_state_storage
 
     def construct_safe_linear_inequalities(
             self, relevant_fluents: Optional[List[str]] = None) -> Precondition:
