@@ -47,7 +47,7 @@ def construct_multiplication_strings(coefficients_vector: Union[np.ndarray, List
     """
     product_components = []
     for func, coefficient in zip(function_variables, coefficients_vector):
-        if coefficient == 0.0:
+        if abs(round(coefficient, 4)) <= EPSILON:
             continue
 
         if func == "(dummy)":
