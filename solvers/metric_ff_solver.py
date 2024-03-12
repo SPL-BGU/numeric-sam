@@ -33,15 +33,21 @@ class MetricFFSolver:
             solution_content = solution_file.read()
             return solution_content.decode("utf-8", errors="ignore")
 
-    def _run_metric_ff_process(self, run_command: str, solution_path: Path,
-                               problem_file_path: Path, solving_stats: Dict[str, str]) -> None:
+    def _run_metric_ff_process(
+        self,
+        run_command: str,
+        solution_path: Path,
+        problem_file_path: Path,
+        solving_stats: Dict[str, str],
+        solving_timeout: int = MAX_RUNNING_TIME,
+    ) -> None:
         """Runs the metric-ff process."""
         self.logger.info(f"Metric-FF solver is working on - {problem_file_path.stem}")
         process = subprocess.Popen(run_command, shell=True)
         try:
-            process.wait(timeout=MAX_RUNNING_TIME)
+            process.wait(timeout=solving_timeout)
         except subprocess.TimeoutExpired:
-            self.logger.warning(f"Metric-FF solver took more than {MAX_RUNNING_TIME} seconds to finish.")
+            self.logger.warning(f"Metric-FF solver took more than {solving_timeout} seconds to finish.")
             os.kill(process.pid, signal.SIGTERM)
             os.system("pkill -f ./ff")
             solution_path.unlink(missing_ok=True)
@@ -80,12 +86,19 @@ class MetricFFSolver:
             solving_stats[problem_file_path.stem] = "no_solution"
             solution_path.unlink(missing_ok=True)
 
-    def execute_solver(self, problems_directory_path: Path, domain_file_path: Path,
-                       problems_prefix: str = "pfile", tolerance: float = 0.1) -> Dict[str, str]:
+    def execute_solver(
+        self,
+        problems_directory_path: Path,
+        domain_file_path: Path,
+        solving_timeout: int = MAX_RUNNING_TIME,
+        problems_prefix: str = "pfile",
+        tolerance: float = 0.1,
+    ) -> Dict[str, str]:
         """Solves numeric and PDDL+ problems using the Metric-FF algorithm and outputs the solution into a file.
 
         :param problems_directory_path: the path to the problems directory.
         :param domain_file_path: the path to the domain file.
+        :param solving_timeout: the timeout for the solver.
         :param problems_prefix: the prefix of the problems files.
         :param tolerance: the numeric tolerance for errors in the Metric-FF solver.
         """
@@ -96,17 +109,20 @@ class MetricFFSolver:
             self.logger.debug(f"Starting to work on solving problem - {problem_file_path.stem}")
             solution_path = problems_directory_path / f"{problem_file_path.stem}.solution"
             run_command = f"./ff -o {domain_file_path} -f {problem_file_path} -s 0 -t {tolerance} > {solution_path}"
-            self._run_metric_ff_process(run_command, solution_path, problem_file_path, solving_stats)
+            self._run_metric_ff_process(run_command, solution_path, problem_file_path, solving_stats, solving_timeout)
 
         return solving_stats
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv
     logging.basicConfig(
-        format="%(asctime)s %(name)s %(levelname)-8s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO)
+        format="%(asctime)s %(name)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO
+    )
     solver = MetricFFSolver()
-    solver.execute_solver(problems_directory_path=Path(args[1]), domain_file_path=Path(args[2]),
-                          problems_prefix=args[3])
+    solver.execute_solver(
+        problems_directory_path=Path(args[1]),
+        domain_file_path=Path(args[2]),
+        problems_prefix=args[3],
+        solving_timeout=int(args[4]),
+    )
