@@ -1,0 +1,81 @@
+(define (problem ZTRAVEL-4-2)
+(:domain zeno-travel)
+(:objects
+	plane1 - aircraft
+	plane2 - aircraft
+	plane3 - aircraft
+	plane4 - aircraft
+	person1 - person
+	person2 - person
+	city0 - city
+	city1 - city
+	city2 - city
+	city3 - city
+	city4 - city
+	)
+(:init
+	(at plane1 city4)
+	(= (capacity plane1) 2715)
+	(= (fuel plane1) 156)
+	(= (slow-burn plane1) 1)
+	(= (fast-burn plane1) 3)
+	(= (onboard plane1) 0)
+	(= (zoom-limit plane1) 9)
+	(at plane2 city1)
+	(= (capacity plane2) 11743)
+	(= (fuel plane2) 1811)
+	(= (slow-burn plane2) 4)
+	(= (fast-burn plane2) 9)
+	(= (onboard plane2) 0)
+	(= (zoom-limit plane2) 10)
+	(at plane3 city2)
+	(= (capacity plane3) 11885)
+	(= (fuel plane3) 390)
+	(= (slow-burn plane3) 4)
+	(= (fast-burn plane3) 8)
+	(= (onboard plane3) 0)
+	(= (zoom-limit plane3) 10)
+	(at plane4 city4)
+	(= (capacity plane4) 6702)
+	(= (fuel plane4) 199)
+	(= (slow-burn plane4) 3)
+	(= (fast-burn plane4) 11)
+	(= (onboard plane4) 0)
+	(= (zoom-limit plane4) 3)
+	(at person1 city0)
+	(at person2 city4)
+	(= (distance city0 city0) 0)
+	(= (distance city0 city1) 762)
+	(= (distance city0 city2) 610)
+	(= (distance city0 city3) 613)
+	(= (distance city0 city4) 942)
+	(= (distance city1 city0) 762)
+	(= (distance city1 city1) 0)
+	(= (distance city1 city2) 603)
+	(= (distance city1 city3) 974)
+	(= (distance city1 city4) 633)
+	(= (distance city2 city0) 610)
+	(= (distance city2 city1) 603)
+	(= (distance city2 city2) 0)
+	(= (distance city2 city3) 748)
+	(= (distance city2 city4) 994)
+	(= (distance city3 city0) 613)
+	(= (distance city3 city1) 974)
+	(= (distance city3 city2) 748)
+	(= (distance city3 city3) 0)
+	(= (distance city3 city4) 504)
+	(= (distance city4 city0) 942)
+	(= (distance city4 city1) 633)
+	(= (distance city4 city2) 994)
+	(= (distance city4 city3) 504)
+	(= (distance city4 city4) 0)
+	(= (total-fuel-used) 0)
+)
+(:goal (and
+	(at plane2 city3)
+	(at person1 city2)
+	(at person2 city4)
+	))
+
+(:metric minimize (+ (* 5 (total-time))  (* 1 (total-fuel-used))))
+)

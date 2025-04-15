@@ -1,0 +1,8 @@
+((:init (= (max_int ) 8.0) (= (value c0) 1.0) (= (value c1) 3.0) (= (value c2) 6.0) (= (value c3) 5.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0) (= (rate_value c2) 0.0) (= (rate_value c3) 0.0))
+(operator: (increase_rate c3))
+(:state (= (max_int ) 8.0) (= (value c0) 1.0) (= (value c1) 3.0) (= (value c2) 6.0) (= (value c3) 5.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0) (= (rate_value c2) 0.0) (= (rate_value c3) 1.0))
+(operator: (increase_rate c3))
+(:state (= (max_int ) 8.0) (= (value c0) 1.0) (= (value c1) 3.0) (= (value c2) 6.0) (= (value c3) 5.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0) (= (rate_value c2) 0.0) (= (rate_value c3) 2.0))
+(operator: (increment c3))
+(:state (= (max_int ) 8.0) (= (value c0) 1.0) (= (value c1) 3.0) (= (value c2) 6.0) (= (value c3) 7.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0) (= (rate_value c2) 0.0) (= (rate_value c3) 2.0))
+)

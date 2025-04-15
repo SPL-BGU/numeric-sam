@@ -1,0 +1,4 @@
+(walk driver2 s1 p0-1)
+(walk driver2 p0-1 s0)
+(board-truck driver1 truck5 s2)
+(drive-truck truck5 s2 s0 driver1)

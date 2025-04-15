@@ -1,0 +1,6 @@
+(increase_rate c2)
+(increase_rate c2)
+(increase_rate c2)
+(increase_rate c1)
+(increment c2)
+(decrement c1)

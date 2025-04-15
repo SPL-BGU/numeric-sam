@@ -1,0 +1,6 @@
+(move-slow farm1 farm0)
+(move-slow farm0 farm2)
+(move-fast farm1 farm0)
+(move-slow farm0 farm5)
+(move-slow farm0 farm6)
+(move-slow farm1 farm0)

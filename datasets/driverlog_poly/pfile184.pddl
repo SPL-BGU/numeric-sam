@@ -1,0 +1,273 @@
+(define (problem DLOG-5-5-12)
+	(:domain driverlog)
+	(:objects
+	driver1 - driver
+	driver2 - driver
+	driver3 - driver
+	driver4 - driver
+	driver5 - driver
+	truck1 - truck
+	truck2 - truck
+	truck3 - truck
+	truck4 - truck
+	truck5 - truck
+	package1 - obj
+	package2 - obj
+	package3 - obj
+	package4 - obj
+	package5 - obj
+	package6 - obj
+	package7 - obj
+	package8 - obj
+	package9 - obj
+	package10 - obj
+	package11 - obj
+	package12 - obj
+	s0 - location
+	s1 - location
+	s2 - location
+	s3 - location
+	s4 - location
+	s5 - location
+	s6 - location
+	s7 - location
+	s8 - location
+	p0-1 - location
+	p0-5 - location
+	p0-6 - location
+	p1-3 - location
+	p1-6 - location
+	p1-7 - location
+	p3-4 - location
+	p4-5 - location
+	p4-7 - location
+	p5-6 - location
+	p5-7 - location
+	p5-8 - location
+	p6-4 - location
+	p7-2 - location
+	p8-0 - location
+	p8-2 - location
+	p8-4 - location
+	)
+	(:init
+	(at driver1 s0)
+	(at driver2 s2)
+	(at driver3 s0)
+	(at driver4 s6)
+	(at driver5 s5)
+	(at truck1 s1)
+	(empty truck1)
+	(= (load truck1) 0)
+	(= (fuel-per-minute truck1) 10)
+	(at truck2 s8)
+	(empty truck2)
+	(= (load truck2) 0)
+	(= (fuel-per-minute truck2) 10)
+	(at truck3 s4)
+	(empty truck3)
+	(= (load truck3) 0)
+	(= (fuel-per-minute truck3) 10)
+	(at truck4 s7)
+	(empty truck4)
+	(= (load truck4) 0)
+	(= (fuel-per-minute truck4) 10)
+	(at truck5 s8)
+	(empty truck5)
+	(= (load truck5) 0)
+	(= (fuel-per-minute truck5) 10)
+	(at package1 s1)
+	(at package2 s2)
+	(at package3 s0)
+	(at package4 s6)
+	(at package5 s3)
+	(at package6 s7)
+	(at package7 s8)
+	(at package8 s5)
+	(at package9 s3)
+	(at package10 s1)
+	(at package11 s7)
+	(at package12 s2)
+	(path s0 p0-1)
+	(path p0-1 s0)
+	(path s1 p0-1)
+	(path p0-1 s1)
+	(path s0 p0-5)
+	(path p0-5 s0)
+	(path s5 p0-5)
+	(path p0-5 s5)
+	(path s0 p0-6)
+	(path p0-6 s0)
+	(path s6 p0-6)
+	(path p0-6 s6)
+	(path s1 p1-3)
+	(path p1-3 s1)
+	(path s3 p1-3)
+	(path p1-3 s3)
+	(path s1 p1-6)
+	(path p1-6 s1)
+	(path s6 p1-6)
+	(path p1-6 s6)
+	(path s1 p1-7)
+	(path p1-7 s1)
+	(path s7 p1-7)
+	(path p1-7 s7)
+	(path s3 p3-4)
+	(path p3-4 s3)
+	(path s4 p3-4)
+	(path p3-4 s4)
+	(path s4 p4-5)
+	(path p4-5 s4)
+	(path s5 p4-5)
+	(path p4-5 s5)
+	(path s4 p4-7)
+	(path p4-7 s4)
+	(path s7 p4-7)
+	(path p4-7 s7)
+	(path s5 p5-6)
+	(path p5-6 s5)
+	(path s6 p5-6)
+	(path p5-6 s6)
+	(path s5 p5-7)
+	(path p5-7 s5)
+	(path s7 p5-7)
+	(path p5-7 s7)
+	(path s5 p5-8)
+	(path p5-8 s5)
+	(path s8 p5-8)
+	(path p5-8 s8)
+	(path s6 p6-4)
+	(path p6-4 s6)
+	(path s4 p6-4)
+	(path p6-4 s4)
+	(path s7 p7-2)
+	(path p7-2 s7)
+	(path s2 p7-2)
+	(path p7-2 s2)
+	(path s8 p8-0)
+	(path p8-0 s8)
+	(path s0 p8-0)
+	(path p8-0 s0)
+	(path s8 p8-2)
+	(path p8-2 s8)
+	(path s2 p8-2)
+	(path p8-2 s2)
+	(path s8 p8-4)
+	(path p8-4 s8)
+	(path s4 p8-4)
+	(path p8-4 s4)
+	(link s0 s1)
+	(link s1 s0)
+	(= (time-to-drive s0 s1) 38)
+	(= (time-to-drive s1 s0) 38)
+	(link s0 s2)
+	(link s2 s0)
+	(= (time-to-drive s0 s2) 38)
+	(= (time-to-drive s2 s0) 38)
+	(link s0 s6)
+	(link s6 s0)
+	(= (time-to-drive s0 s6) 53)
+	(= (time-to-drive s6 s0) 53)
+	(link s0 s8)
+	(link s8 s0)
+	(= (time-to-drive s0 s8) 17)
+	(= (time-to-drive s8 s0) 17)
+	(link s1 s7)
+	(link s7 s1)
+	(= (time-to-drive s1 s7) 4)
+	(= (time-to-drive s7 s1) 4)
+	(link s1 s8)
+	(link s8 s1)
+	(= (time-to-drive s1 s8) 57)
+	(= (time-to-drive s8 s1) 57)
+	(link s2 s1)
+	(link s1 s2)
+	(= (time-to-drive s2 s1) 31)
+	(= (time-to-drive s1 s2) 31)
+	(link s2 s4)
+	(link s4 s2)
+	(= (time-to-drive s2 s4) 57)
+	(= (time-to-drive s4 s2) 57)
+	(link s3 s1)
+	(link s1 s3)
+	(= (time-to-drive s3 s1) 39)
+	(= (time-to-drive s1 s3) 39)
+	(link s3 s8)
+	(link s8 s3)
+	(= (time-to-drive s3 s8) 49)
+	(= (time-to-drive s8 s3) 49)
+	(link s4 s0)
+	(link s0 s4)
+	(= (time-to-drive s4 s0) 6)
+	(= (time-to-drive s0 s4) 6)
+	(link s4 s3)
+	(link s3 s4)
+	(= (time-to-drive s4 s3) 89)
+	(= (time-to-drive s3 s4) 89)
+	(link s4 s5)
+	(link s5 s4)
+	(= (time-to-drive s4 s5) 76)
+	(= (time-to-drive s5 s4) 76)
+	(link s5 s0)
+	(link s0 s5)
+	(= (time-to-drive s5 s0) 11)
+	(= (time-to-drive s0 s5) 11)
+	(link s5 s1)
+	(link s1 s5)
+	(= (time-to-drive s5 s1) 62)
+	(= (time-to-drive s1 s5) 62)
+	(link s5 s2)
+	(link s2 s5)
+	(= (time-to-drive s5 s2) 30)
+	(= (time-to-drive s2 s5) 30)
+	(link s5 s6)
+	(link s6 s5)
+	(= (time-to-drive s5 s6) 59)
+	(= (time-to-drive s6 s5) 59)
+	(link s6 s4)
+	(link s4 s6)
+	(= (time-to-drive s6 s4) 39)
+	(= (time-to-drive s4 s6) 39)
+	(link s7 s6)
+	(link s6 s7)
+	(= (time-to-drive s7 s6) 19)
+	(= (time-to-drive s6 s7) 19)
+	(link s7 s8)
+	(link s8 s7)
+	(= (time-to-drive s7 s8) 24)
+	(= (time-to-drive s8 s7) 24)
+	(link s8 s2)
+	(link s2 s8)
+	(= (time-to-drive s8 s2) 19)
+	(= (time-to-drive s2 s8) 19)
+	(link s8 s5)
+	(link s5 s8)
+	(= (time-to-drive s8 s5) 55)
+	(= (time-to-drive s5 s8) 55)
+	(= (fuel-used) 0)
+)
+	(:goal (and
+	(at driver2 s8)
+	(at driver3 s4)
+	(at driver4 s8)
+	(at driver5 s3)
+	(at truck2 s0)
+	(at truck3 s1)
+	(at truck4 s0)
+	(at truck5 s0)
+	(at package1 s0)
+	(at package2 s3)
+	(at package3 s3)
+	(at package4 s0)
+	(at package5 s5)
+	(at package7 s6)
+	(at package8 s2)
+	(at package9 s0)
+	(at package10 s0)
+	(at package11 s1)
+	(at package12 s4)
+	))
+
+(:metric minimize (+ (* 3 (total-time)) (* 1 (fuel-used))))
+
+)

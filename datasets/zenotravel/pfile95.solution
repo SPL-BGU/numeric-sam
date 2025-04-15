@@ -1,0 +1,8 @@
+(refuel plane2 city1)
+(zoom plane2 city1 city0)
+(board person1 plane2 city0)
+(fly plane2 city0 city3)
+(refuel plane2 city3)
+(fly plane2 city3 city2)
+(debark person1 plane2 city2)
+(fly plane2 city2 city3)

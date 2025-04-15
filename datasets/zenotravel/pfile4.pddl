@@ -1,0 +1,87 @@
+(define (problem ZTRAVEL-3-3)
+(:domain zeno-travel)
+(:objects
+	plane1 - aircraft
+	plane2 - aircraft
+	plane3 - aircraft
+	person1 - person
+	person2 - person
+	person3 - person
+	city0 - city
+	city1 - city
+	city2 - city
+	city3 - city
+	city4 - city
+	city5 - city
+	)
+(:init
+	(at plane1 city1)
+	(= (capacity plane1) 2333)
+	(= (fuel plane1) 95)
+	(= (slow-burn plane1) 1)
+	(= (fast-burn plane1) 3)
+	(= (onboard plane1) 0)
+	(= (zoom-limit plane1) 4)
+	(at plane2 city1)
+	(= (capacity plane2) 4596)
+	(= (fuel plane2) 1729)
+	(= (slow-burn plane2) 2)
+	(= (fast-burn plane2) 4)
+	(= (onboard plane2) 0)
+	(= (zoom-limit plane2) 1)
+	(at plane3 city5)
+	(= (capacity plane3) 11301)
+	(= (fuel plane3) 678)
+	(= (slow-burn plane3) 4)
+	(= (fast-burn plane3) 14)
+	(= (onboard plane3) 0)
+	(= (zoom-limit plane3) 1)
+	(at person1 city3)
+	(at person2 city5)
+	(at person3 city4)
+	(= (distance city0 city0) 0)
+	(= (distance city0 city1) 958)
+	(= (distance city0 city2) 566)
+	(= (distance city0 city3) 595)
+	(= (distance city0 city4) 630)
+	(= (distance city0 city5) 607)
+	(= (distance city1 city0) 958)
+	(= (distance city1 city1) 0)
+	(= (distance city1 city2) 680)
+	(= (distance city1 city3) 709)
+	(= (distance city1 city4) 827)
+	(= (distance city1 city5) 597)
+	(= (distance city2 city0) 566)
+	(= (distance city2 city1) 680)
+	(= (distance city2 city2) 0)
+	(= (distance city2 city3) 654)
+	(= (distance city2 city4) 753)
+	(= (distance city2 city5) 557)
+	(= (distance city3 city0) 595)
+	(= (distance city3 city1) 709)
+	(= (distance city3 city2) 654)
+	(= (distance city3 city3) 0)
+	(= (distance city3 city4) 785)
+	(= (distance city3 city5) 835)
+	(= (distance city4 city0) 630)
+	(= (distance city4 city1) 827)
+	(= (distance city4 city2) 753)
+	(= (distance city4 city3) 785)
+	(= (distance city4 city4) 0)
+	(= (distance city4 city5) 963)
+	(= (distance city5 city0) 607)
+	(= (distance city5 city1) 597)
+	(= (distance city5 city2) 557)
+	(= (distance city5 city3) 835)
+	(= (distance city5 city4) 963)
+	(= (distance city5 city5) 0)
+	(= (total-fuel-used) 0)
+)
+(:goal (and
+	(at person1 city4)
+	(at person2 city5)
+	(at person3 city1)
+	))
+
+(:metric minimize (+ (* 5 (total-time))  (* 1 (total-fuel-used))))
+)

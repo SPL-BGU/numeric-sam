@@ -1,0 +1,106 @@
+(define (problem strips-sat-x-1)
+(:domain satellite)
+(:objects
+	satellite0 - satellite
+	instrument0 - instrument
+	instrument1 - instrument
+	satellite1 - satellite
+	instrument2 - instrument
+	instrument3 - instrument
+	thermograph0 - mode
+	infrared1 - mode
+	thermograph2 - mode
+	Star2 - direction
+	Star0 - direction
+	GroundStation1 - direction
+	Star3 - direction
+	Planet4 - direction
+	Star5 - direction
+	Star6 - direction
+)
+(:init
+	(supports instrument0 thermograph2)
+	(supports instrument0 thermograph0)
+	(calibration_target instrument0 Star0)
+	(supports instrument1 infrared1)
+	(calibration_target instrument1 Star0)
+	(on_board instrument0 satellite0)
+	(on_board instrument1 satellite0)
+	(power_avail satellite0)
+	(pointing satellite0 Star6)
+	(= (data_capacity satellite0) 1000)
+	(= (fuel satellite0) 145)
+	(supports instrument2 infrared1)
+	(calibration_target instrument2 Star0)
+	(supports instrument3 thermograph2)
+	(calibration_target instrument3 GroundStation1)
+	(on_board instrument2 satellite1)
+	(on_board instrument3 satellite1)
+	(power_avail satellite1)
+	(pointing satellite1 Star2)
+	(= (data_capacity satellite1) 1000)
+	(= (fuel satellite1) 128)
+	(= (data Star3 thermograph0) 131)
+	(= (data Planet4 thermograph0) 177)
+	(= (data Star5 thermograph0) 46)
+	(= (data Star6 thermograph0) 226)
+	(= (data Star3 infrared1) 114)
+	(= (data Planet4 infrared1) 12)
+	(= (data Star5 infrared1) 159)
+	(= (data Star6 infrared1) 262)
+	(= (data Star3 thermograph2) 274)
+	(= (data Planet4 thermograph2) 217)
+	(= (data Star5 thermograph2) 31)
+	(= (data Star6 thermograph2) 239)
+	(= (slew_time Star2 Star0) 22.85)
+	(= (slew_time Star0 Star2) 22.85)
+	(= (slew_time Star2 GroundStation1) 6.71)
+	(= (slew_time GroundStation1 Star2) 6.71)
+	(= (slew_time GroundStation1 Star0) 27.99)
+	(= (slew_time Star0 GroundStation1) 27.99)
+	(= (slew_time Star3 Star0) 13.23)
+	(= (slew_time Star0 Star3) 13.23)
+	(= (slew_time Star3 GroundStation1) 36.77)
+	(= (slew_time GroundStation1 Star3) 36.77)
+	(= (slew_time Star3 Star2) 61.14)
+	(= (slew_time Star2 Star3) 61.14)
+	(= (slew_time Planet4 Star0) 4.109)
+	(= (slew_time Star0 Planet4) 4.109)
+	(= (slew_time Planet4 GroundStation1) 37.19)
+	(= (slew_time GroundStation1 Planet4) 37.19)
+	(= (slew_time Planet4 Star2) 36.64)
+	(= (slew_time Star2 Planet4) 36.64)
+	(= (slew_time Planet4 Star3) 9.294)
+	(= (slew_time Star3 Planet4) 9.294)
+	(= (slew_time Star5 Star0) 38.28)
+	(= (slew_time Star0 Star5) 38.28)
+	(= (slew_time Star5 GroundStation1) 30.98)
+	(= (slew_time GroundStation1 Star5) 30.98)
+	(= (slew_time Star5 Star2) 0.3784)
+	(= (slew_time Star2 Star5) 0.3784)
+	(= (slew_time Star5 Star3) 56.07)
+	(= (slew_time Star3 Star5) 56.07)
+	(= (slew_time Star5 Planet4) 81.5)
+	(= (slew_time Planet4 Star5) 81.5)
+	(= (slew_time Star6 Star0) 32.6)
+	(= (slew_time Star0 Star6) 32.6)
+	(= (slew_time Star6 GroundStation1) 66.71)
+	(= (slew_time GroundStation1 Star6) 66.71)
+	(= (slew_time Star6 Star2) 28.28)
+	(= (slew_time Star2 Star6) 28.28)
+	(= (slew_time Star6 Star3) 11.5)
+	(= (slew_time Star3 Star6) 11.5)
+	(= (slew_time Star6 Planet4) 42.45)
+	(= (slew_time Planet4 Star6) 42.45)
+	(= (slew_time Star6 Star5) 78.38)
+	(= (slew_time Star5 Star6) 78.38)
+	(= (data-stored) 0)
+	(= (fuel-used) 0)
+)
+(:goal (and
+	(have_image Star5 thermograph0)
+	(have_image Star6 thermograph0)
+))
+(:metric minimize (fuel-used))
+
+)

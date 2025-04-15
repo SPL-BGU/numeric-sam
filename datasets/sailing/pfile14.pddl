@@ -1,0 +1,71 @@
+;; Enrico Scala (enricos83@gmail.com) and Miquel Ramirez (miquel.ramirez@gmail.com)
+(define (problem instance_11_14)
+
+	(:domain sailing)
+
+	(:objects
+		b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 - boat
+		p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 - person
+	)
+
+  (:init
+		(= (x b0) 0)
+(= (y b0) 0)
+(= (x b1) -6)
+(= (y b1) 0)
+(= (x b2) 2)
+(= (y b2) 0)
+(= (x b3) -1)
+(= (y b3) 0)
+(= (x b4) 4)
+(= (y b4) 0)
+(= (x b5) -7)
+(= (y b5) 0)
+(= (x b6) -4)
+(= (y b6) 0)
+(= (x b7) -4)
+(= (y b7) 0)
+(= (x b8) -8)
+(= (y b8) 0)
+(= (x b9) -3)
+(= (y b9) 0)
+(= (x b10) -7)
+(= (y b10) 0)
+
+		(= (d p0) 87)
+(= (d p1) 73)
+(= (d p2) 55)
+(= (d p3) 19)
+(= (d p4) 82)
+(= (d p5) 8)
+(= (d p6) 82)
+(= (d p7) 16)
+(= (d p8) 48)
+(= (d p9) 85)
+(= (d p10) 91)
+(= (d p11) 55)
+(= (d p12) 15)
+(= (d p13) 73)
+
+	)
+
+	(:goal
+		(and
+			(saved p0)
+(saved p1)
+(saved p2)
+(saved p3)
+(saved p4)
+(saved p5)
+(saved p6)
+(saved p7)
+(saved p8)
+(saved p9)
+(saved p10)
+(saved p11)
+(saved p12)
+(saved p13)
+		)
+	)
+)
+

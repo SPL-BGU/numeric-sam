@@ -1,0 +1,6 @@
+((:init (= (max_int ) 4.0) (= (value c0) 4.0) (= (value c1) 4.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0))
+(operator: (increase_rate c0))
+(:state (= (max_int ) 4.0) (= (value c0) 4.0) (= (value c1) 4.0) (= (rate_value c0) 1.0) (= (rate_value c1) 0.0))
+(operator: (decrement c0))
+(:state (= (max_int ) 4.0) (= (value c0) 3.0) (= (value c1) 4.0) (= (rate_value c0) 1.0) (= (rate_value c1) 0.0))
+)

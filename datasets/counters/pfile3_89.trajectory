@@ -1,0 +1,6 @@
+((:init (= (value c0) 55.0) (= (value c1) 55.0) (= (value c2) 87.0) (= (rate_value c0) 0.0) (= (rate_value c1) 0.0) (= (rate_value c2) 0.0) (= (max_int ) 100.0))
+(operator: (increase_rate c1))
+(:state (= (value c0) 55.0) (= (value c1) 55.0) (= (value c2) 87.0) (= (rate_value c0) 0.0) (= (rate_value c1) 1.0) (= (rate_value c2) 0.0) (= (max_int ) 100.0))
+(operator: (increment c1))
+(:state (= (value c0) 55.0) (= (value c1) 56.0) (= (value c2) 87.0) (= (rate_value c0) 0.0) (= (rate_value c1) 1.0) (= (rate_value c2) 0.0) (= (max_int ) 100.0))
+)

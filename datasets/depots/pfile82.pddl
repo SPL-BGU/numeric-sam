@@ -1,0 +1,57 @@
+(define (problem depotprob42) (:domain depot)
+(:objects
+	depot0 - depot
+	distributor0 distributor1 - distributor
+	truck0 truck1 - truck
+	pallet0 pallet1 pallet2 - pallet
+	crate0 crate1 crate2 crate3 crate4 crate5 - crate
+	hoist0 hoist1 hoist2 - hoist)
+(:init
+	(at pallet0 depot0)
+	(clear crate5)
+	(at pallet1 distributor0)
+	(clear crate2)
+	(at pallet2 distributor1)
+	(clear crate4)
+	(at truck0 depot0)
+	(= (current_load truck0) 0)
+	(= (load_limit truck0) 365)
+	(at truck1 depot0)
+	(= (current_load truck1) 0)
+	(= (load_limit truck1) 228)
+	(at hoist0 depot0)
+	(available hoist0)
+	(at hoist1 distributor0)
+	(available hoist1)
+	(at hoist2 distributor1)
+	(available hoist2)
+	(at crate0 distributor0)
+	(on crate0 pallet1)
+	(= (weight crate0) 58)
+	(at crate1 distributor0)
+	(on crate1 crate0)
+	(= (weight crate1) 73)
+	(at crate2 distributor0)
+	(on crate2 crate1)
+	(= (weight crate2) 80)
+	(at crate3 distributor1)
+	(on crate3 pallet2)
+	(= (weight crate3) 28)
+	(at crate4 distributor1)
+	(on crate4 crate3)
+	(= (weight crate4) 92)
+	(at crate5 depot0)
+	(on crate5 pallet0)
+	(= (weight crate5) 26)
+	(= (fuel-cost) 0)
+)
+
+(:goal (and
+		(on crate1 pallet2)
+		(on crate2 pallet0)
+		(on crate3 crate1)
+		(on crate5 pallet1)
+	)
+)
+
+(:metric minimize (total-time)))

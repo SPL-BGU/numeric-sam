@@ -1,0 +1,4 @@
+((:init (= (trees_in_map ) 124.0) (= (count_log_in_inventory ) 47.0) (= (count_planks_in_inventory ) 20.0) (= (count_stick_in_inventory ) 43.0) (= (count_sack_polyisoprene_pellets_in_inventory ) 1.0) (= (count_tree_tap_in_inventory ) 1.0))
+(operator: (craft_wooden_pogo ))
+(:state (= (trees_in_map ) 124.0) (= (count_log_in_inventory ) 47.0) (= (count_planks_in_inventory ) 18.0) (= (count_stick_in_inventory ) 39.0) (= (count_sack_polyisoprene_pellets_in_inventory ) 0.0) (= (count_tree_tap_in_inventory ) 1.0) (have_pogo_stick ))
+)
