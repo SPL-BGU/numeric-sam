@@ -5,7 +5,7 @@ from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, Trajector
 from pddl_plus_parser.models import Domain, Problem, Observation, PDDLObject, MultiAgentObservation
 from pytest import fixture
 
-from sam_learning.learners import SAMLearner, MASAMPlus
+from sam_learning.learners import SAMLearner
 from tests.consts import (
     ELEVATORS_DOMAIN_PATH,
     ELEVATORS_PROBLEM_PATH,
@@ -48,7 +48,6 @@ from tests.consts import (
     ROVERS_COMBINED_WITH_MACRO_DOMAIN_PATH,
     WOODWORKING_DOMAIN_PATH,
 )
-from tests.multi_agent_learning_tests.multi_agent_sam_test import WOODWORKING_AGENT_NAMES, ROVERS_AGENT_NAMES
 from utilities import NegativePreconditionPolicy
 
 os.environ["CONVEX_HULL_ERROR_PATH"] = "tests\\convex_hull_error.txt"
@@ -276,30 +275,3 @@ def minecraft_large_problem(minecraft_large_domain: Domain) -> Problem:
 @fixture()
 def minecraft_large_trajectory(minecraft_large_domain: Domain, minecraft_large_problem: Problem) -> Observation:
     return TrajectoryParser(minecraft_large_domain, minecraft_large_problem).parse_trajectory(MINECRAFT_LARGE_TRAJECTORY_PATH)
-
-
-@fixture()
-def ma_driverlog_domain() -> Domain:
-    return DomainParser(DRIVERLOG_COMBINED_DOMAIN_PATH, partial_parsing=True).parse_domain()
-
-
-@fixture()
-def ma_plus_full_rovers_domain() -> Domain:
-    return DomainParser(ROVERS_COMBINED_WITH_MACRO_DOMAIN_PATH, partial_parsing=False).parse_domain()
-
-
-@fixture()
-def ma_driverlog_problem(ma_driverlog_domain: Domain) -> Problem:
-    return ProblemParser(problem_path=DRIVERLOG_COMBINED_PROBLEM_PATH, domain=ma_driverlog_domain).parse_problem()
-
-
-@fixture()
-def ma_driverlog_observation(ma_driverlog_domain: Domain, ma_driverlog_problem: Problem) -> MultiAgentObservation:
-    return TrajectoryParser(ma_driverlog_domain, ma_driverlog_problem).parse_trajectory(
-        DRIVERLOG_COMBINED_TRAJECTORY_PATH, executing_agents=DRIVERLOG_AGENT_NAMES
-    )
-
-
-@fixture()
-def rovers_ma_sam_plus(ma_rovers_domain) -> MASAMPlus:
-    return MASAMPlus(ma_rovers_domain)

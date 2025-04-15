@@ -13,7 +13,7 @@ from pddl_plus_parser.models import (
     CompoundPrecondition,
 )
 
-from sam_learning.learners import SAMLearner, MultiAgentSAM
+from sam_learning.learners import SAMLearner
 
 EXAMPLES_DIR_PATH = Path(__file__).parent / "examples"
 LOGISTICS_DOMAIN_PATH = EXAMPLES_DIR_PATH / "domain-logistics.pddl"
@@ -170,17 +170,6 @@ def sync_snapshot(
         current_action=test_action_call,
         observation_objects=trajectory_objects,
         specific_types=all_types,
-    )
-
-
-def sync_ma_snapshot(
-    ma_sam: MultiAgentSAM, component: MultiAgentComponent, action_call: ActionCall, trajectory_objects: Dict[str, PDDLObject]
-) -> None:
-    previous_state = component.previous_state
-    next_state = component.next_state
-    ma_sam.current_trajectory_objects = trajectory_objects
-    ma_sam.triplet_snapshot.create_triplet_snapshot(
-        previous_state=previous_state, next_state=next_state, current_action=action_call, observation_objects=trajectory_objects
     )
 
 

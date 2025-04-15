@@ -6,6 +6,7 @@ SAM learning algorithm for numeric action model learning.
 
 The following explains how to install the SAM-Learning framework.
 Notice, the code works on linux machines due to its dependencies on planners and validators that only work on linux machines.
+Required version - 3.10 or higher.
 
 ### Needed external tools:
 1. **ENHSP solver** - can be downloaded from [here](https://sites.google.com/view/enhsp/). 
