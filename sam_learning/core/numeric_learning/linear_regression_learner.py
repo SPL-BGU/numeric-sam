@@ -38,16 +38,23 @@ class LinearRegressionLearner:
         self.action_name = action_name
         self.domain_functions = {func.name: func for func in domain_functions.values()}
         functions = list([function.untyped_representation for function in domain_functions.values()])
+        self._function_representation = functions
         monomials = create_monomials(functions, polynom_degree)
         self.previous_state_data = DataFrame(columns=[create_polynomial_string(monomial) for monomial in monomials])
         self.next_state_data = DataFrame(columns=functions)
 
-    def _combine_states_data(self) -> DataFrame:
+    def _combine_states_data(self, relevant_fluents: Optional[List[str]] = None) -> DataFrame:
         """Combines the previous and next states data into a single dataframe.
 
         :return: the combined dataframe.
         """
         # assuming that if a function is an effect of the action it will always be present in the next state.
+        if relevant_fluents is not None:
+            self.previous_state_data = self.previous_state_data[
+                [fluent for fluent in self.previous_state_data.columns.tolist() if fluent in relevant_fluents]
+            ]
+            self.next_state_data = self.next_state_data[[fluent for fluent in self.next_state_data.columns.tolist() if fluent in relevant_fluents]]
+
         next_state_df = self.next_state_data.add_prefix(NEXT_STATE_PREFIX)
         combined_data = pd.concat([self.previous_state_data, next_state_df], axis=1)
         # getting the columns that contain missing values in the previous state.
@@ -254,9 +261,11 @@ class LinearRegressionLearner:
         :param state_data: the data of the state.
         :param store_in_prev_state: whether to store the data in the previous state or the next state.
         """
-
         state_sample = DataFrame.from_dict(data={k: [v] for k, v in state_data.items()}, orient="columns")
         data_to_update = self.previous_state_data if store_in_prev_state else self.next_state_data
+        if not store_in_prev_state:
+            state_sample = state_sample.drop([col for col in state_sample.columns if col not in self._function_representation], axis=1)
+
         attribute_name = "previous_state_data" if store_in_prev_state else "next_state_data"
 
         if data_to_update.empty:
@@ -267,18 +276,26 @@ class LinearRegressionLearner:
         data_to_update.dropna(axis="columns", inplace=True)
         setattr(self, attribute_name, data_to_update)
 
-    def construct_assignment_equations(self) -> Tuple[Set[NumericalExpressionTree], Optional[Precondition], bool]:
+    def construct_assignment_equations(
+        self, allow_unsafe: bool = False, relevant_fluents: Optional[List[str]] = None
+    ) -> Tuple[Set[NumericalExpressionTree], Optional[Precondition], bool]:
         """Constructs the assignment statements for the action according to the changed value functions.
 
+        :param allow_unsafe: whether to allow unsafe learning.
+        :param relevant_fluents: the fluents that are part of the action's preconditions and effects.
         :return: the constructed effects with the possibly additional preconditions.
         """
+        if relevant_fluents is not None and len(relevant_fluents) == 0:
+            self.logger.debug(f"No numeric effects for the action {self.action_name}.")
+            return set(), None, False
+
         if len(self.next_state_data) == 0:
             self.logger.debug(f"No observations for the action {self.action_name}.")
             return set(), None, False
 
         assignment_statements = []
         self.logger.info(f"Constructing the fluent assignment equations for action {self.action_name}.")
-        combined_data = self._combine_states_data()
+        combined_data = self._combine_states_data(relevant_fluents)
         if combined_data.shape[0] == 1:
             self.logger.info(f"The action {self.action_name} contains a single unique observation!")
             return self._construct_effect_from_single_sample(), None, False
@@ -295,14 +312,14 @@ class LinearRegressionLearner:
         is_safe_to_learn = self._validate_legal_equations(regression_df)
         for feature_fluent, tagged_fluent in zip(self.next_state_data.columns.tolist(), tagged_next_state_fluents):
             regression_df[LABEL_COLUMN] = combined_data[tagged_fluent]
-            if combined_data[feature_fluent].equals(combined_data[tagged_fluent]) and is_safe_to_learn:
+            if self.previous_state_data[feature_fluent].equals(self.next_state_data[feature_fluent]):
                 self.logger.debug(
                     f"The value of the {feature_fluent} is the same before and "
                     f"after the application of the action. The action does not change the value!"
                 )
                 continue
 
-            polynomial_equation = self._solve_linear_equations(feature_fluent, regression_df)
+            polynomial_equation = self._solve_linear_equations(feature_fluent, regression_df, allow_unsafe_learning=allow_unsafe)
 
             if polynomial_equation is not None:
                 assignment_statements.append(polynomial_equation)

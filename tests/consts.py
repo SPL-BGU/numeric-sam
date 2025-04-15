@@ -2,10 +2,18 @@
 from pathlib import Path
 from typing import Dict, List
 
-from pddl_plus_parser.models import PDDLType, Predicate, PDDLFunction, ObservedComponent, PDDLObject, \
-    CompoundPrecondition
+from pddl_plus_parser.models import (
+    PDDLType,
+    Predicate,
+    PDDLFunction,
+    ObservedComponent,
+    PDDLObject,
+    MultiAgentComponent,
+    ActionCall,
+    CompoundPrecondition,
+)
 
-from sam_learning.learners import SAMLearner
+from sam_learning.learners import SAMLearner, MultiAgentSAM
 
 EXAMPLES_DIR_PATH = Path(__file__).parent / "examples"
 LOGISTICS_DOMAIN_PATH = EXAMPLES_DIR_PATH / "domain-logistics.pddl"
@@ -18,6 +26,7 @@ DEPOTS_NUMERIC_PROBLEM_PATH = EXAMPLES_DIR_PATH / "pfile2.pddl"
 
 DEPOTS_DISCRETE_DOMAIN_PATH = EXAMPLES_DIR_PATH / "depot_discrete.pddl"
 DEPOTS_DISCRETE_PROBLEM_PATH = EXAMPLES_DIR_PATH / "depot_discrete_problem.pddl"
+
 
 ELEVATORS_DOMAIN_PATH = EXAMPLES_DIR_PATH / "elevators_domain.pddl"
 ELEVATORS_PROBLEM_PATH = EXAMPLES_DIR_PATH / "elevators_p03.pddl"
@@ -44,8 +53,12 @@ WOODWORKING_COMBINED_PROBLEM_PATH = EXAMPLES_DIR_PATH / "woodworking_combined_pr
 WOODWORKING_COMBINED_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "ma_woodworking_trajectory.trajectory"
 
 ROVERS_COMBINED_DOMAIN_PATH = EXAMPLES_DIR_PATH / "rover_combined_domain.pddl"
+ROVERS_ESAM_DOMAIN_PATH = EXAMPLES_DIR_PATH / "rovers_esam_domain.pddl"
 ROVERS_COMBINED_PROBLEM_PATH = EXAMPLES_DIR_PATH / "rovers_conflicing_actions_problem.pddl"
 ROVERS_COMBINED_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "rovers_conflicting_actions_trajectory.trajectory"
+ROVERS_COMBINED_ESAM_PROBLEM_PATH = EXAMPLES_DIR_PATH / "rovers_esam_problem.pddl"
+ROVERS_COMBINED_ESAM_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "rovers_esam_problem.trajectory"
+
 
 SPIDER_DOMAIN_PATH = EXAMPLES_DIR_PATH / "spider_domain.pddl"
 SPIDER_PROBLEM_PATH = EXAMPLES_DIR_PATH / "spider_problem.pddl"
@@ -64,20 +77,49 @@ MINECRAFT_PROBLEM_PATH = EXAMPLES_DIR_PATH / "minecraft_pfile0.pddl"
 MINECRAFT_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "minecraft_pfile0.trajectory"
 MINECRAFT_FLUENTS_MAP_PATH = EXAMPLES_DIR_PATH / "minecraft_fluents_map.json"
 
+
 STAR_CRAFT_DOMAIN_PATH = EXAMPLES_DIR_PATH / "starcraft_domain.pddl"
 STAR_CRAFT_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "starcraft_trajectory.trajectory"
 STAR_CRAFT_FLUENTS_MAP_PATH = EXAMPLES_DIR_PATH / "starcraft_fluents_map.json"
+
 
 MINECRAFT_MEDIUM_DOMAIN_PATH = EXAMPLES_DIR_PATH / "domain_minecraft_medium.pddl"
 MINECRAFT_MEDIUM_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "trajectory_minecraft_medium.trajectory"
 MINECRAFT_MEDIUM_FLUENTS_MAP_PATH = EXAMPLES_DIR_PATH / "fluents_map_minecraft_medium.json"
 
+
 MINECRAFT_SMALL_DOMAIN_PATH = EXAMPLES_DIR_PATH / "minecraft_domain_small.pddl"
 MINECRAFT_SMALL_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "minecraft_problem_small.trajectory"
+
 
 MINECRAFT_LARGE_DOMAIN_PATH = EXAMPLES_DIR_PATH / "advanced_minecraft_domain.pddl"
 MINECRAFT_LARGE_PROBLEM_PATH = EXAMPLES_DIR_PATH / "advanced_map_instance_0.pddl"
 MINECRAFT_LARGE_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "advanced_map_instance_0.trajectory"
+
+
+DRIVERLOG_POLY_DOMAIN_PATH = EXAMPLES_DIR_PATH / "driverlogHardNumeric.pddl"
+DRIVERLOG_POLY_PROBLEM_PATH = EXAMPLES_DIR_PATH / "driverlog_poly_problem.pddl"
+DRIVERLOG_POLY_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "driverlog_poly_problem.trajectory"
+
+FARMLAND_DOMAIN_PATH = EXAMPLES_DIR_PATH / "farmland.pddl"
+FARMLAND_TRAJECTORIES_DIRECTORY = EXAMPLES_DIR_PATH / "large_data_examples" / "farmland"
+SAILING_TRAJECTORIES_DIRECTORY = EXAMPLES_DIR_PATH / "large_data_examples" / "sailing"
+
+
+COUNTERS_POLYNOMIAL_DOMAIN_PATH = EXAMPLES_DIR_PATH / "counters_poly.pddl"
+COUNTERS_POLYNOMIAL_PROBLEMS_PATH = [path for path in (EXAMPLES_DIR_PATH).glob("pfile_counters_poly*.pddl")]
+COUNTERS_POLYNOMIAL_TRAJECTORIES_PATH = [path for path in (EXAMPLES_DIR_PATH).glob("pfile_counters_poly*.trajectory")]
+
+BLOCKS_PROPOSITIONAL_DOMAIN_PATH = EXAMPLES_DIR_PATH / "blocksworld_propositional_domain.pddl"
+BLOCKS_PROPOSITIONAL_PROBLEM_PATH = EXAMPLES_DIR_PATH / "blocks_propositional_prob00.pddl"
+BLOCKS_PROPOSITIONAL_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "blocks_propositional.trajectory"
+
+TEST_PPO_OBSERVATIONS_DIRECTORY = EXAMPLES_DIR_PATH / "ppo_observations"
+TEST_PPO_MINECRAFT_DOMAIN = EXAMPLES_DIR_PATH / "ppo_minecraft_domain.pddl"
+
+
+FARMLAND_EXAMPLES_PATH = EXAMPLES_DIR_PATH / "convex_state_data.csv"
+FARMLAND_PAPER_EXAMPLES_PATH = EXAMPLES_DIR_PATH / "convex_state_data_for_paper.csv"
 
 OBJECT_TYPE = PDDLType(name="object")
 AGENT_TYPE = PDDLType(name="agent")
@@ -94,9 +136,7 @@ AIRPLANE_TYPE = PDDLType(name="airplane", parent=AGENT_TYPE)
 LOCATION_TYPE = PDDLType(name="location", parent=OBJECT_TYPE)
 COUNT_TYPE = PDDLType(name="count", parent=OBJECT_TYPE)
 
-AT_TRUCK_PREDICATE = Predicate(name="at",
-                               signature={"?a": AGENT_TYPE,
-                                          "?loc": LOCATION_TYPE})
+AT_TRUCK_PREDICATE = Predicate(name="at", signature={"?a": AGENT_TYPE, "?loc": LOCATION_TYPE})
 
 FUEL_COST_FUNCTION = PDDLFunction(name="fuel-cost", signature={})
 LOAD_LIMIT_TRAJECTORY_FUNCTION = PDDLFunction(name="load_limit", signature={"?z": TRUCK_TYPE})
@@ -106,8 +146,15 @@ CURRENT_LOAD_GROUNDED_TRAJECTORY_FUNCTION = PDDLFunction(name="current_load", si
 WEIGHT_FUNCTION = PDDLFunction(name="weight", signature={"?c": CRATE_TYPE})
 
 
-def sync_snapshot(sam_learning: SAMLearner, component: ObservedComponent,
-                  trajectory_objects: Dict[str, PDDLObject], should_include_all_objects: bool = False) -> None:
+DRIVERLOG_COMBINED_DOMAIN_PATH = EXAMPLES_DIR_PATH / "driverlog_combined_domain.pddl"
+DRIVERLOG_COMBINED_PROBLEM_PATH = EXAMPLES_DIR_PATH / "driverlog_conflicting_problem.pddl"
+DRIVERLOG_COMBINED_TRAJECTORY_PATH = EXAMPLES_DIR_PATH / "driverlog_ma_sam_pfile2.trajectory"
+ROVERS_COMBINED_WITH_MACRO_DOMAIN_PATH = EXAMPLES_DIR_PATH / "rovers_ma_plus_domain.pddl"
+
+
+def sync_snapshot(
+    sam_learning: SAMLearner, component: ObservedComponent, trajectory_objects: Dict[str, PDDLObject], should_include_all_objects: bool = False
+) -> None:
     previous_state = component.previous_state
     next_state = component.next_state
     test_action_call = component.grounded_action_call
@@ -118,8 +165,23 @@ def sync_snapshot(sam_learning: SAMLearner, component: ObservedComponent,
         all_types = []
 
     sam_learning.triplet_snapshot.create_triplet_snapshot(
-        previous_state=previous_state, next_state=next_state, current_action=test_action_call,
-        observation_objects=trajectory_objects, specific_types=all_types)
+        previous_state=previous_state,
+        next_state=next_state,
+        current_action=test_action_call,
+        observation_objects=trajectory_objects,
+        specific_types=all_types,
+    )
+
+
+def sync_ma_snapshot(
+    ma_sam: MultiAgentSAM, component: MultiAgentComponent, action_call: ActionCall, trajectory_objects: Dict[str, PDDLObject]
+) -> None:
+    previous_state = component.previous_state
+    next_state = component.next_state
+    ma_sam.current_trajectory_objects = trajectory_objects
+    ma_sam.triplet_snapshot.create_triplet_snapshot(
+        previous_state=previous_state, next_state=next_state, current_action=action_call, observation_objects=trajectory_objects
+    )
 
 
 def extract_preconditions_predicates(compound_preconditions: CompoundPrecondition) -> List[Predicate]:
