@@ -8,7 +8,7 @@ from pddl_plus_parser.models import PDDLFunction, Precondition, NumericalExpress
 from scipy.spatial import ConvexHull
 
 from sam_learning.core.numeric_learning.convex_hull_learner import ConvexHullLearner
-from sam_learning.core.numeric_learning.numeric_utils import remove_complex_linear_dependencies
+from sam_learning.core.numeric_learning.numeric_utils import remove_complex_linear_dependencies, construct_pddl_inequality_scheme
 
 TEST_ACTION_NAME = "test_action"
 
@@ -31,7 +31,7 @@ def test_construct_pddl_inequality_scheme_with_simple_2d_four_equations_returns_
     left_side_coefficients = np.random.randint(10, size=(4, 2))
     right_side_points = np.random.randint(10, size=4)
 
-    inequalities = convex_hull_learner._construct_pddl_inequality_scheme(left_side_coefficients, right_side_points, ["(x)", "(y)"])
+    inequalities = construct_pddl_inequality_scheme(left_side_coefficients, right_side_points, ["(x)", "(y)"])
     assert len(inequalities) == 4
     for ineq in inequalities:
         assert ineq.startswith("(<=")
@@ -298,7 +298,9 @@ def test_construct_safe_linear_inequalities_with_relevant_fluents_ignores_all_va
 def test_epsilon_approximate_hull_when_given_epsilon_zero_and_no_parameters_returns_original_convex_hull(convex_hull_learner: ConvexHullLearner,):
     # create a three-dimensional np.array with 10 samples of random numbers.
     data = np.random.randint(0, 100, (10, 3))
-    non_approximated_hull = convex_hull_learner._epsilon_approximate_hull(data, epsilon=0, qhull_options="")
+    convex_hull_learner._epsilon = 0
+    convex_hull_learner._qhull_options = ""
+    non_approximated_hull = convex_hull_learner._epsilon_approximate_hull(data)
     expected_convex_hull = ConvexHull(data)
     assert np.equal(non_approximated_hull.points, expected_convex_hull.points).all()
     assert np.equal(non_approximated_hull.equations, expected_convex_hull.equations).all()
