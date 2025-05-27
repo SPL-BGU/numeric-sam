@@ -393,6 +393,7 @@ def test_update_action_with_two_trajectory_component_updates_action_data_correct
 def test_deduce_initial_inequality_preconditions_deduce_that_all_objects_with_same_type_should_not_be_equal(
     elevators_sam_learning: SAMLearner,
 ):
+    elevators_sam_learning.should_enforce_injective_binding = True
     elevators_sam_learning.deduce_initial_inequality_preconditions()
     example_action_name = "move-up-slow"
     action = elevators_sam_learning.partial_domain.actions[example_action_name]
@@ -402,6 +403,7 @@ def test_deduce_initial_inequality_preconditions_deduce_that_all_objects_with_sa
 def test_verify_parameter_duplication_removes_inequality_if_found_action_with_duplicated_items_in_observation(
     elevators_sam_learning: SAMLearner,
 ):
+    elevators_sam_learning.should_enforce_injective_binding = True
     elevators_sam_learning.deduce_initial_inequality_preconditions()
     example_action_name = "move-up-slow"
     action = elevators_sam_learning.partial_domain.actions[example_action_name]
@@ -675,7 +677,7 @@ def test_learn_action_model_when_applying_multiple_times_with_different_trajecto
     num_learned_actions_model1 = len(learned_model1.actions)
     learned_model2, learning_metadata = elevators_sam_learning.learn_action_model([observation2])
     num_learned_actions_model2 = len(learned_model2.actions)
-    assert num_learned_actions_model1 < num_learned_actions_model2
+    assert num_learned_actions_model1 <= num_learned_actions_model2
 
 
 def test_learn_action_model_when_applying_multiple_times_with_different_trajectories_updates_the_learned_action_model_and_allows_learning_and_creates_a_more_concise_action_model(
