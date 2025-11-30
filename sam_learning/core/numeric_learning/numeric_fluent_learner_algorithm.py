@@ -9,7 +9,6 @@ from pddl_plus_parser.models import PDDLFunction, Precondition, NumericalExpress
 from sam_learning.core.numeric_learning.convex_hull_learner import ConvexHullLearner
 from sam_learning.core.numeric_learning.linear_regression_learner import LinearRegressionLearner
 from sam_learning.core.numeric_learning.numeric_utils import create_monomials, create_grounded_monomials
-from sam_learning.core.numeric_learning.incremental_convex_hull_learner import IncrementalConvexHullLearner
 
 np.seterr(divide="ignore", invalid="ignore")
 

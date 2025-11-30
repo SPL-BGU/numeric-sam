@@ -10,7 +10,9 @@ from sam_learning.core.baseline_algorithms_version.naive_numeric_fluent_learner_
 )
 from sam_learning.core.learner_domain import DISJUNCTIVE_PRECONDITIONS_REQ
 from sam_learning.core.baseline_algorithms_version.naive_numeric_fluent_learner_algorithm import NaiveNumericFluentStateStorage
-from sam_learning.core.baseline_algorithms_version.naive_polynomial_fluents_learning_algorithm import NaivePolynomialFluentsLearningAlgorithm
+from sam_learning.core.baseline_algorithms_version.naive_polynomial_fluents_learning_algorithm import (
+    NaivePolynomialFluentsLearningAlgorithm,
+)
 from sam_learning.learners.sam_learning import SAMLearner
 
 
@@ -59,7 +61,7 @@ class NaiveNumericSAMLearnerNoDependencyRemoval(SAMLearner):
 
         self.logger.debug("The learned preconditions are not a conjunction. Adding them as a separate condition.")
         action.preconditions.add_condition(learned_numeric_preconditions)
-        self.partial_domain.requirements.append(DISJUNCTIVE_PRECONDITIONS_REQ)
+        self.partial_domain.requirements.add(DISJUNCTIVE_PRECONDITIONS_REQ)
 
     def _construct_safe_numeric_effects(self, action: LearnerAction) -> None:
         """Constructs the safe numeric effects for the input action.
@@ -95,9 +97,13 @@ class NaiveNumericSAMLearnerNoDependencyRemoval(SAMLearner):
         """
         super().add_new_action(grounded_action, previous_state, next_state)
         self.logger.debug(f"Creating the new storage for the action - {grounded_action.name}.")
-        previous_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.previous_state_functions)
+        previous_state_lifted_matches = self.function_matcher.match_state_functions(
+            grounded_action, self.triplet_snapshot.previous_state_functions
+        )
         next_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.next_state_functions)
-        self.storage[grounded_action.name] = NaiveNumericFluentStateStorageNoDependencyRemoval(grounded_action.name, self.partial_domain.functions)
+        self.storage[grounded_action.name] = NaiveNumericFluentStateStorageNoDependencyRemoval(
+            grounded_action.name, self.partial_domain.functions
+        )
         self.storage[grounded_action.name].add_to_previous_state_storage(previous_state_lifted_matches)
         self.storage[grounded_action.name].add_to_next_state_storage(next_state_lifted_matches)
         self.logger.debug(f"Done creating the numeric state variable storage for the action - {grounded_action.name}")
@@ -113,7 +119,9 @@ class NaiveNumericSAMLearnerNoDependencyRemoval(SAMLearner):
         action_name = grounded_action.name
         super().update_action(grounded_action, previous_state, next_state)
         self.logger.debug(f"Adding the numeric state variables to the numeric storage of action - {action_name}.")
-        previous_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.previous_state_functions)
+        previous_state_lifted_matches = self.function_matcher.match_state_functions(
+            grounded_action, self.triplet_snapshot.previous_state_functions
+        )
         next_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.next_state_functions)
         self.storage[action_name].add_to_previous_state_storage(previous_state_lifted_matches)
         self.storage[action_name].add_to_next_state_storage(next_state_lifted_matches)
@@ -168,7 +176,9 @@ class NaivePolynomialSAMLearningNoDependencyRemoval(NaiveNumericSAMLearnerNoDepe
     storage: Dict[str, NaivePolynomialFluentsLearningAlgorithm]
     polynom_degree: int
 
-    def __init__(self, partial_domain: Domain, relevant_fluents: Optional[Dict[str, List[str]]] = None, polynomial_degree: int = 1, **kwargs):
+    def __init__(
+        self, partial_domain: Domain, relevant_fluents: Optional[Dict[str, List[str]]] = None, polynomial_degree: int = 1, **kwargs
+    ):
         super().__init__(partial_domain, relevant_fluents, **kwargs)
         self.polynom_degree = polynomial_degree
 

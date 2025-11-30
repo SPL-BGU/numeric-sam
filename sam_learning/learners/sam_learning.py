@@ -20,7 +20,6 @@ from pddl_plus_parser.models import (
 from sam_learning.core import (
     PredicatesMatcher,
     extract_discrete_effects,
-    LearnerDomain,
     contains_duplicates,
     VocabularyCreator,
     EnvironmentSnapshot,
@@ -51,7 +50,7 @@ class SAMLearner:
         self,
         partial_domain: Domain,
         negative_preconditions_policy: NegativePreconditionPolicy = NegativePreconditionPolicy.no_remove,
-        should_enforce_injective_binding: bool = False,
+        should_enforce_injective_binding: bool = True,
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -228,9 +227,7 @@ class SAMLearner:
         """
         for action_name, action_signature in self._action_signatures.items():
             if action_name not in self.partial_domain.actions:
-                action = Action()
-                action.name = action_name
-                action.signature = action_signature
+                action = Action(name=action_name, signature=action_signature)
                 self.partial_domain.actions[action_name] = action
 
     def handle_single_trajectory_component(self, component: ObservedComponent) -> None:
@@ -252,7 +249,6 @@ class SAMLearner:
             previous_state=previous_state,
             next_state=next_state,
             current_action=grounded_action,
-            observation_objects=self.current_trajectory_objects,
         )
         if grounded_action.name not in self.observed_actions:
             self.add_new_action(grounded_action, previous_state, next_state)
@@ -307,7 +303,7 @@ class SAMLearner:
         self.learning_end_time = time.time()
         self.logger.info(f"Finished learning the action model in " f"{self.learning_end_time - self.learning_start_time} seconds.")
 
-    def learn_action_model(self, observations: List[Observation]) -> Tuple[LearnerDomain, Dict[str, str]]:
+    def learn_action_model(self, observations: List[Observation]) -> Tuple[Domain, Dict[str, str]]:
         """Learn the SAFE action model from the input trajectories.
 
         :param observations: the list of trajectories that are used to learn the safe action model.

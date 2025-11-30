@@ -2,12 +2,13 @@
 
 from typing import List, Dict, Tuple, Optional
 
-from pddl_plus_parser.models import Observation, ActionCall, State, Domain
+from pddl_plus_parser.models import Observation, ActionCall, State, Domain, Action
 
-from sam_learning.core import LearnerDomain, NumericFunctionMatcher, NotSafeActionError, LearnerAction
-from sam_learning.core.learner_domain import DISJUNCTIVE_PRECONDITIONS_REQ
+from sam_learning.core import NumericFunctionMatcher, NotSafeActionError
 from sam_learning.core.baseline_algorithms_version.naive_numeric_fluent_learner_algorithm import NaiveNumericFluentStateStorage
-from sam_learning.core.baseline_algorithms_version.naive_polynomial_fluents_learning_algorithm import NaivePolynomialFluentsLearningAlgorithm
+from sam_learning.core.baseline_algorithms_version.naive_polynomial_fluents_learning_algorithm import (
+    NaivePolynomialFluentsLearningAlgorithm,
+)
 from sam_learning.learners.sam_learning import SAMLearner
 
 
@@ -31,7 +32,7 @@ class NaiveNumericSAMLearner(SAMLearner):
         self.relevant_fluents = relevant_fluents
         self.effects_fluent_map = effects_fluent_map
 
-    def _construct_safe_numeric_preconditions(self, action: LearnerAction) -> None:
+    def _construct_safe_numeric_preconditions(self, action: Action) -> None:
         """Constructs the safe preconditions for the input action.
 
         :param action: the action that the preconditions are constructed for.
@@ -54,11 +55,9 @@ class NaiveNumericSAMLearner(SAMLearner):
 
             return
 
-        self.logger.debug("The learned preconditions are not a conjunction. Adding them as a separate condition.")
-        action.preconditions.add_condition(learned_numeric_preconditions)
-        self.partial_domain.requirements.append(DISJUNCTIVE_PRECONDITIONS_REQ)
+        raise ValueError(f"The learned numeric preconditions for the action {action.name} are not a conjunction.")
 
-    def _construct_safe_numeric_effects(self, action: LearnerAction) -> None:
+    def _construct_safe_numeric_effects(self, action: Action) -> None:
         """Constructs the safe numeric effects for the input action.
 
         :param action: the action that its effects are constructed for.
@@ -92,7 +91,9 @@ class NaiveNumericSAMLearner(SAMLearner):
         """
         super().add_new_action(grounded_action, previous_state, next_state)
         self.logger.debug(f"Creating the new storage for the action - {grounded_action.name}.")
-        previous_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.previous_state_functions)
+        previous_state_lifted_matches = self.function_matcher.match_state_functions(
+            grounded_action, self.triplet_snapshot.previous_state_functions
+        )
         next_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.next_state_functions)
         self.storage[grounded_action.name] = NaiveNumericFluentStateStorage(grounded_action.name, self.partial_domain.functions)
         self.storage[grounded_action.name].add_to_previous_state_storage(previous_state_lifted_matches)
@@ -110,13 +111,15 @@ class NaiveNumericSAMLearner(SAMLearner):
         action_name = grounded_action.name
         super().update_action(grounded_action, previous_state, next_state)
         self.logger.debug(f"Adding the numeric state variables to the numeric storage of action - {action_name}.")
-        previous_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.previous_state_functions)
+        previous_state_lifted_matches = self.function_matcher.match_state_functions(
+            grounded_action, self.triplet_snapshot.previous_state_functions
+        )
         next_state_lifted_matches = self.function_matcher.match_state_functions(grounded_action, self.triplet_snapshot.next_state_functions)
         self.storage[action_name].add_to_previous_state_storage(previous_state_lifted_matches)
         self.storage[action_name].add_to_next_state_storage(next_state_lifted_matches)
         self.logger.debug(f"Done updating the numeric state variable storage for the action - {grounded_action.name}")
 
-    def learn_action_model(self, observations: List[Observation]) -> Tuple[LearnerDomain, Dict[str, str]]:
+    def learn_action_model(self, observations: List[Observation]) -> Tuple[Domain, Dict[str, str]]:
         """Learn the SAFE action model from the input observations.
 
         :param observations: the list of trajectories that are used to learn the safe action model.
@@ -130,7 +133,7 @@ class NaiveNumericSAMLearner(SAMLearner):
         for observation in observations:
             self.current_trajectory_objects = observation.grounded_objects
             for component in observation.components:
-                if not super().are_states_different(component.previous_state, component.next_state):
+                if not component.is_successful:
                     continue
 
                 self.handle_single_trajectory_component(component)
@@ -165,7 +168,9 @@ class NaivePolynomialSAMLearning(NaiveNumericSAMLearner):
     storage: Dict[str, NaivePolynomialFluentsLearningAlgorithm]
     polynom_degree: int
 
-    def __init__(self, partial_domain: Domain, relevant_fluents: Optional[Dict[str, List[str]]] = None, polynomial_degree: int = 1, **kwargs):
+    def __init__(
+        self, partial_domain: Domain, relevant_fluents: Optional[Dict[str, List[str]]] = None, polynomial_degree: int = 1, **kwargs
+    ):
         super().__init__(partial_domain, relevant_fluents, **kwargs)
         self.polynom_degree = polynomial_degree
 
