@@ -79,6 +79,6 @@
 (go_north_west b7)
 (go_north_west b7)
 (save_person b7 p1)
-(go_north_west b7)
 (go_north_east b7)
+(go_north_west b7)
 (save_person b7 p11)

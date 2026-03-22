@@ -1,0 +1,6 @@
+{
+	"increment": ["(value ?c)", "(rate_value ?c)", "(max_int )"],
+	"decrement": ["(value ?c)", "(rate_value ?c)"],
+	"increase_rate": ["(rate_value ?c)"], 
+	"decrement_rate": ["(rate_value ?c)"]
+}

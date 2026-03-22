@@ -1,0 +1,14 @@
+(define (problem instance_24)
+	(:domain PolyCraft)
+	(:objects
+		cell0 cell1 cell2 cell3 cell4 cell5 cell6 cell7 cell8 cell9 cell10 cell11 cell12 cell14 cell15 cell16 cell17 cell18 cell19 cell20 cell21 cell22 cell23 cell24 cell25 cell26 cell27 cell28 cell29 cell30 cell31 cell32 cell33 cell34 cell35 - cell
+	)
+	(:init (position cell19) (air_cell cell0) (air_cell cell1) (air_cell cell2) (air_cell cell3) (air_cell cell4) (air_cell cell5) (air_cell cell6) (air_cell cell7) (air_cell cell8) (air_cell cell9) (air_cell cell10) (air_cell cell11) (air_cell cell12) (air_cell cell14) (air_cell cell16) (air_cell cell17) (air_cell cell18) (air_cell cell19) (air_cell cell21) (air_cell cell23) (air_cell cell24) (air_cell cell25) (air_cell cell26) (air_cell cell27) (air_cell cell28) (air_cell cell29) (air_cell cell30) (air_cell cell31) (air_cell cell32) (air_cell cell33) (air_cell cell34) (air_cell cell35) (tree_cell cell15) (tree_cell cell20) (tree_cell cell22)
+		(crafting_table_cell crafting_table) (= (count_log_in_inventory) 3) (= (count_planks_in_inventory) 2) (= (count_stick_in_inventory) 5) (= (count_sack_polyisoprene_pellets_in_inventory) 0) (= (count_tree_tap_in_inventory) 0)
+	)
+	(:goal
+		(and
+			(have_pogo_stick)
+		)
+	)
+)

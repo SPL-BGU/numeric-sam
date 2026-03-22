@@ -1,0 +1,5 @@
+(craft_stick)
+(tp_to cell16 cell22)
+(break cell22)
+(craft_plank)
+(craft_wooden_sword cell22)

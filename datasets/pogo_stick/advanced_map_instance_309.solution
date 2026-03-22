@@ -1,0 +1,8 @@
+(tp_to cell16 cell19)
+(craft_stick)
+(craft_tree_tap cell19)
+(tp_to crafting_table cell19)
+(place_tree_tap cell19)
+(tp_to cell19 crafting_table)
+(craft_plank)
+(craft_wooden_pogo crafting_table)

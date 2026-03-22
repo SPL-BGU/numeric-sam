@@ -6,15 +6,6 @@ class LearningAlgorithmType(Enum):
     esam_learning = 2
     numeric_sam = 3
     plan_miner = 5
-    ma_sam = 7
-    conditional_sam = 9
-    universal_sam = 10
-    online_nsam = 13
-    incremental_nsam = 19
-
-    # learning algorithms relating to fault repair not to be used for POL
-    oblique_tree = 11
-    extended_svc = 12
 
     # To remove
     naive_nsam = 15

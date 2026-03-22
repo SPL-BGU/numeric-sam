@@ -1,0 +1,8 @@
+(tp_to cell19 cell35)
+(craft_plank)
+(craft_plank)
+(tp_to cell35 cell10)
+(craft_tree_tap cell10)
+(tp_to crafting_table cell10)
+(place_tree_tap cell10)
+(craft_wooden_pogo cell10)

@@ -1,0 +1,172 @@
+(define (problem DLOG-5-1-7-241)
+	(:domain driverlog)
+	(:objects
+	driver1 - driver
+	driver2 - driver
+	driver3 - driver
+	driver4 - driver
+	driver5 - driver
+	truck1 - truck
+	package1 - obj
+	package2 - obj
+	package3 - obj
+	package4 - obj
+	package5 - obj
+	package6 - obj
+	package7 - obj
+	s0 - location
+	s1 - location
+	s2 - location
+	s3 - location
+	s4 - location
+	s5 - location
+	p4-0 - location
+	p4-5 - location
+	p2-0 - location
+	p2-4 - location
+	p0-5 - location
+	p1-0 - location
+	p1-5 - location
+	p3-4 - location
+	p3-5 - location
+	)
+	(:init
+	(at driver1 s1)
+	(at driver2 s0)
+	(at driver3 s5)
+	(at driver4 s3)
+	(at driver5 s1)
+	(at truck1 s2)
+	(empty truck1)
+	(= (load truck1) 0)
+	(= (fuel-per-minute truck1) 10)
+	(at package1 s3)
+	(at package2 s4)
+	(at package3 s4)
+	(at package4 s4)
+	(at package5 s0)
+	(at package6 s2)
+	(at package7 s2)
+	(path s4 p4-0)
+	(path p4-0 s4)
+	(path s0 p4-0)
+	(path p4-0 s0)
+	(= (time-to-walk s4 p4-0) 6)
+	(= (time-to-walk p4-0 s4) 6)
+	(= (time-to-walk s0 p4-0) 14)
+	(= (time-to-walk p4-0 s0) 14)
+	(path s4 p4-5)
+	(path p4-5 s4)
+	(path s5 p4-5)
+	(path p4-5 s5)
+	(= (time-to-walk s4 p4-5) 12)
+	(= (time-to-walk p4-5 s4) 12)
+	(= (time-to-walk s5 p4-5) 12)
+	(= (time-to-walk p4-5 s5) 12)
+	(path s2 p2-0)
+	(path p2-0 s2)
+	(path s0 p2-0)
+	(path p2-0 s0)
+	(= (time-to-walk s2 p2-0) 23)
+	(= (time-to-walk p2-0 s2) 23)
+	(= (time-to-walk s0 p2-0) 14)
+	(= (time-to-walk p2-0 s0) 14)
+	(path s2 p2-4)
+	(path p2-4 s2)
+	(path s4 p2-4)
+	(path p2-4 s4)
+	(= (time-to-walk s2 p2-4) 15)
+	(= (time-to-walk p2-4 s2) 15)
+	(= (time-to-walk s4 p2-4) 15)
+	(= (time-to-walk p2-4 s4) 15)
+	(path s0 p0-5)
+	(path p0-5 s0)
+	(path s5 p0-5)
+	(path p0-5 s5)
+	(= (time-to-walk s0 p0-5) 19)
+	(= (time-to-walk p0-5 s0) 19)
+	(= (time-to-walk s5 p0-5) 25)
+	(= (time-to-walk p0-5 s5) 25)
+	(path s1 p1-0)
+	(path p1-0 s1)
+	(path s0 p1-0)
+	(path p1-0 s0)
+	(= (time-to-walk s1 p1-0) 4)
+	(= (time-to-walk p1-0 s1) 4)
+	(= (time-to-walk s0 p1-0) 27)
+	(= (time-to-walk p1-0 s0) 27)
+	(path s1 p1-5)
+	(path p1-5 s1)
+	(path s5 p1-5)
+	(path p1-5 s5)
+	(= (time-to-walk s1 p1-5) 7)
+	(= (time-to-walk p1-5 s1) 7)
+	(= (time-to-walk s5 p1-5) 40)
+	(= (time-to-walk p1-5 s5) 40)
+	(path s3 p3-4)
+	(path p3-4 s3)
+	(path s4 p3-4)
+	(path p3-4 s4)
+	(= (time-to-walk s3 p3-4) 20)
+	(= (time-to-walk p3-4 s3) 20)
+	(= (time-to-walk s4 p3-4) 30)
+	(= (time-to-walk p3-4 s4) 30)
+	(path s3 p3-5)
+	(path p3-5 s3)
+	(path s5 p3-5)
+	(path p3-5 s5)
+	(= (time-to-walk s3 p3-5) 26)
+	(= (time-to-walk p3-5 s3) 26)
+	(= (time-to-walk s5 p3-5) 39)
+	(= (time-to-walk p3-5 s5) 39)
+	(link s1 s2)
+	(link s2 s1)
+	(= (time-to-drive s1 s2) 5)
+	(= (time-to-drive s2 s1) 5)
+	(link s4 s1)
+	(link s1 s4)
+	(= (time-to-drive s4 s1) 7)
+	(= (time-to-drive s1 s4) 7)
+	(link s3 s0)
+	(link s0 s3)
+	(= (time-to-drive s3 s0) 6)
+	(= (time-to-drive s0 s3) 6)
+	(link s3 s5)
+	(link s5 s3)
+	(= (time-to-drive s3 s5) 16)
+	(= (time-to-drive s5 s3) 16)
+	(link s0 s1)
+	(link s1 s0)
+	(= (time-to-drive s0 s1) 39)
+	(= (time-to-drive s1 s0) 39)
+	(link s0 s5)
+	(link s5 s0)
+	(= (time-to-drive s0 s5) 18)
+	(= (time-to-drive s5 s0) 18)
+	(link s2 s3)
+	(link s3 s2)
+	(= (time-to-drive s2 s3) 6)
+	(= (time-to-drive s3 s2) 6)
+	(link s2 s5)
+	(link s5 s2)
+	(= (time-to-drive s2 s5) 39)
+	(= (time-to-drive s5 s2) 39)
+	(= (fuel-used) 0)
+)
+	(:goal (and
+	(at driver1 s1)
+	(at driver2 s0)
+	(at driver4 s1)
+	(at driver5 s4)
+	(at truck1 s4)
+	(at package1 s4)
+	(at package2 s3)
+	(at package3 s0)
+	(at package5 s4)
+	(at package6 s5)
+	(at package7 s2)
+	))
+
+(:metric minimize (+ (* 3 (total-time)) (* 4 (fuel-used))))
+
+)
